@@ -22,7 +22,7 @@ As a CLI, run the following on a console:
 If no option is given, the program will run on the default Docker Socket, with an interval of 5 seconds and `stdout` as
 repository (this is done so you can quickly check what this tool does, without setting a DB or service).
 
-Where:
+### Top Level Opts:
 - `socket`: unix socket to connect to Docker. (In the future this will be a sub-option of the unix mode).
             Default: `/var/run/docker.sock`
 - `interval`: seconds between each stat, in seconds. Minimum is 1 second. Default is `5`.

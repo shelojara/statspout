@@ -36,7 +36,7 @@ func (mongo *Mongo) Close() {
 	mongo.session.Close()
 }
 
-func CreateMongoFlagsMap() map[string]*string {
+func CreateMongoOpts() map[string]*string {
 	return map[string]*string {
 		"address": flag.String(
 			"mongo.address",

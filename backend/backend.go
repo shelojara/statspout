@@ -3,10 +3,12 @@
 package backend
 
 import (
+	"time"
+
 	"github.com/mijara/statspout/data"
 	"github.com/mijara/statspout/repo"
 	"github.com/fsouza/go-dockerclient"
-	"time"
+	"github.com/prometheus/common/log"
 )
 
 type Endpoint struct {
@@ -63,12 +65,12 @@ func queryContainer(client *docker.Client, container *statspout.Container, repo 
 	}()
 
 	containerStats := statspout.Stats{
-		ID: container.ID,
+		ID:   container.ID,
 		Name: container.Names[0][1:],
 	}
 
 	// receive stats from container, ignore stats that are received in between ticker times.
-	// TODO: this may be not the best approach, but we have to test.
+	// TODO: this may not be the best approach, but we have to test.
 	ticker := time.NewTicker(interval)
 
 	stats, ok := <-statsC
@@ -76,7 +78,12 @@ func queryContainer(client *docker.Client, container *statspout.Container, repo 
 		return
 	}
 
-	pushStats(&containerStats, repo, stats)
+	err := pushStats(&containerStats, repo, stats)
+	if err != nil {
+		// TODO: not quite sure which strategy should I use when an Error is returned...
+		log.Error(err)
+		return
+	}
 
 	for {
 		stats, ok := <-statsC
@@ -86,20 +93,25 @@ func queryContainer(client *docker.Client, container *statspout.Container, repo 
 
 		select {
 		case <-ticker.C:
-			pushStats(&containerStats, repo, stats)
+			err = pushStats(&containerStats, repo, stats)
+			if err != nil {
+				// TODO: not quite sure which strategy should I use when an Error is returned...
+				log.Error(err)
+				return
+			}
 		default:
-		//
+		// Empty!
 		}
 	}
 }
 
-func pushStats(containerStats *statspout.Stats, repo repo.Interface, stats *docker.Stats) {
+func pushStats(containerStats *statspout.Stats, repo repo.Interface, stats *docker.Stats) error {
 	containerStats.Timestamp = stats.Read
 	containerStats.CpuPercent = calcCpuPercent(stats)
 	containerStats.MemoryPercent = calcMemoryPercent(stats)
 	containerStats.MemoryUsage = stats.MemoryStats.Usage
 
-	repo.Push(containerStats)
+	return repo.Push(containerStats)
 }
 
 // taken from: https://github.com/portainer/portainer/blob/develop/app/components/stats/statsController.js#L177-L193

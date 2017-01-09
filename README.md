@@ -27,8 +27,11 @@ Where:
 ## Specific Options
 
 ### MongoDB
-- `mongo.address`: Address of the MongoDB Endpoint
+- `mongo.address`: Address of the MongoDB Endpoint. Default: `localhost:27017`
+
+### Prometheus
+- `prometheus.address`: Address on which the Prometheus HTTP Server will publish metrics. Default: `:8080`
 
 ### InfluxDB
-- `influxdb.address`: Address of the InfluxDB Endpoint
-- `influxdb.database`: Database to store data
+- `influxdb.address`: Address of the InfluxDB Endpoint. Default: `http://localhost:8086`
+- `influxdb.database`: Database to store data. Default: `statspout`

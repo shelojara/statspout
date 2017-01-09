@@ -12,10 +12,22 @@ import (
 )
 
 var (
-	repository = flag.String("repository", "stdout", "One of: stdout, mongodb, prometheus, influxdb")
-	influxDB = repo.CreateInfluxDBFlagsMap()
-	mongo = repo.CreateMongoFlagsMap()
-	interval = flag.Int("interval", 5, "Interval between each stats query")
+	// which repository to use.
+	repository = flag.String(
+		"repository",
+		"stdout",
+		"One of: stdout, mongodb, prometheus, influxdb")
+
+	// seconds between each stat, in seconds. Minimum is 1 second.
+	interval = flag.Int(
+		"interval",
+		5,
+		"Interval between each stats query")
+
+	// specific maps of options.
+	influxDBOpts   = repo.CreateInfluxDBOpts()
+	mongoDBOpts    = repo.CreateMongoOpts()
+	prometheusOpts = repo.CreatePrometheusOpts()
 )
 
 func gracefulQuitInterrupt(doneChannels []chan bool) {
@@ -72,7 +84,7 @@ func main() {
 	var doneChannels []chan bool
 	for i := 0; i < len(containers); i++ {
 		doneChannels = append(doneChannels, backend.Query(endpoint, &containers[i], repository,
-			time.Duration(*interval) * time.Second))
+			time.Duration(*interval)*time.Second))
 	}
 
 	// graceful Ctrl-C quit.
@@ -88,14 +100,16 @@ func getRepositoryObject() (repo.Interface, error) {
 		r = repo.NewStdout()
 	case "mongodb":
 		r, err = repo.NewMongo(
-			*mongo["mongodb.address"],
+			*mongoDBOpts["address"],
 		)
 	case "prometheus":
-		r, err = repo.NewPrometheus()
+		r, err = repo.NewPrometheus(
+			*prometheusOpts["address"],
+		)
 	case "influxdb":
 		r, err = repo.NewInfluxDB(
-			*influxDB["influxdb.address"],
-			*influxDB["influxdb.database"],
+			*influxDBOpts["address"],
+			*influxDBOpts["database"],
 		)
 	}
 

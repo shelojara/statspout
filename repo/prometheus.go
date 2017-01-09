@@ -3,6 +3,7 @@ package repo
 import (
 	"net/http"
 	"log"
+	"flag"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/client_golang/prometheus"
@@ -15,7 +16,7 @@ type Prometheus struct {
 	memoryUsagePercent *prometheus.GaugeVec
 }
 
-func NewPrometheus() (*Prometheus, error) {
+func NewPrometheus(address string) (*Prometheus, error) {
 	// hacky way of removing the default Go Collector.
 	prometheus.Unregister(prometheus.NewGoCollector())
 
@@ -42,7 +43,7 @@ func NewPrometheus() (*Prometheus, error) {
 	http.Handle("/metrics", promhttp.Handler())
 
 	// start HTTP Server.
-	go serve()
+	go serve(address)
 
 	return &Prometheus{
 		cpuUsagePercent: cpuUsagePercent,
@@ -61,6 +62,15 @@ func (prom *Prometheus) Close() {
 	// TODO
 }
 
-func serve() {
-	log.Fatal(http.ListenAndServe(":8080", nil))
+func serve(address string) {
+	log.Fatal(http.ListenAndServe(address, nil))
+}
+
+func CreatePrometheusOpts() map[string]*string {
+	return map[string]*string {
+		"address": flag.String(
+			"prometheus.address",
+			":8080",
+			"Address on which the Prometheus HTTP Server will publish metrics"),
+	}
 }

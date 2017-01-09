@@ -63,7 +63,7 @@ func (influx *InfluxDB) Close() {
 	influx.client.Close()
 }
 
-func CreateInfluxDBFlagsMap() map[string]*string {
+func CreateInfluxDBOpts() map[string]*string {
 	return map[string]*string {
 		"address": flag.String(
 			"influxdb.address",
@@ -72,7 +72,7 @@ func CreateInfluxDBFlagsMap() map[string]*string {
 
 		"database": flag.String(
 			"influxdb.database",
-			"dockerstats",
+			"statspout",
 			"Database to store data"),
 	}
 }

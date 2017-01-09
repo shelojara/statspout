@@ -28,6 +28,8 @@ Where:
 
 ### MongoDB
 - `mongo.address`: Address of the MongoDB Endpoint. Default: `localhost:27017`
+- `mongo.database`: Database for the collection. Default: `statspout`
+- `mongo.collection`: Collection for the stats. Default: `stats`
 
 ### Prometheus
 - `prometheus.address`: Address on which the Prometheus HTTP Server will publish metrics. Default: `:8080`

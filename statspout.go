@@ -101,6 +101,8 @@ func getRepositoryObject() (repo.Interface, error) {
 	case "mongodb":
 		r, err = repo.NewMongo(
 			*mongoDBOpts["address"],
+			*mongoDBOpts["database"],
+			*mongoDBOpts["collection"],
 		)
 	case "prometheus":
 		r, err = repo.NewPrometheus(

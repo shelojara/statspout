@@ -5,7 +5,30 @@ Service that retrieves stats from Docker Containers and sends them to some repos
 
 Supported Repositories:
 
-- Stdout (for testing)
-- MongoDB (using https://github.com/go-mgo/mgo)
-- Prometheus (as a scapre source, using https://github.com/prometheus/client_golang)
-- InfluxDB (using https://github.com/influxdata/influxdb/tree/master/client)
+- Stdout [stdout] (for testing)
+- MongoDB [mongodb] (using https://github.com/go-mgo/mgo)
+- Prometheus [prometheus] (as a scapre source, using https://github.com/prometheus/client_golang)
+- InfluxDB [influxdb] (using https://github.com/influxdata/influxdb/tree/master/client)
+
+
+## Usage
+
+As a CLI, run the following on a console:
+
+```
+./statspout -interval=<interval> -repository=<repository> {options}
+```
+
+Where:
+- `interval`: seconds between each stat, in seconds. Minimum is 1 second. Default is `5`.
+- `repository`: which repository to use (they're listed in the Supported Repositories list, in square brackets)
+  each repository will bound different options. Default is `stdout`.
+
+## Specific Options
+
+### MongoDB
+- `mongo.address`: Address of the MongoDB Endpoint
+
+### InfluxDB
+- `influxdb.address`: Address of the InfluxDB Endpoint
+- `influxdb.database`: Database to store data

@@ -4,6 +4,7 @@ import (
 	"github.com/influxdata/influxdb/client/v2"
 
 	"github.com/mijara/statspout/data"
+	"flag"
 )
 
 type InfluxDB struct {
@@ -60,4 +61,18 @@ func (influx *InfluxDB) pushResource(stats *statspout.Stats, resource string, va
 
 func (influx *InfluxDB) Close() {
 	influx.client.Close()
+}
+
+func CreateInfluxDBFlagsMap() map[string]*string {
+	return map[string]*string {
+		"address": flag.String(
+			"influxdb.address",
+			"http://localhost:8086",
+			"Address of the InfluxDB Endpoint"),
+
+		"database": flag.String(
+			"influxdb.database",
+			"dockerstats",
+			"Database to store data"),
+	}
 }

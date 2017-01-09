@@ -3,14 +3,15 @@ package repo
 import (
 	"github.com/mijara/statspout/data"
 	"gopkg.in/mgo.v2"
+	"flag"
 )
 
 type Mongo struct {
 	session *mgo.Session
 }
 
-func NewMongo() (*Mongo, error) {
-	session, err := mgo.Dial("localhost:27017")
+func NewMongo(address string) (*Mongo, error) {
+	session, err := mgo.Dial(address)
 	if err != nil {
 		return nil, err
 	}
@@ -33,4 +34,13 @@ func (mongo *Mongo) Push(stats *statspout.Stats) error {
 
 func (mongo *Mongo) Close() {
 	mongo.session.Close()
+}
+
+func CreateMongoFlagsMap() map[string]*string {
+	return map[string]*string {
+		"address": flag.String(
+			"mongo.address",
+			"localhost:27017",
+			"Address of the MongoDB Endpoint"),
+	}
 }

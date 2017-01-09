@@ -1,51 +1,61 @@
 package main
 
 import (
-	"fmt"
-
-	"github.com/fsouza/go-dockerclient"
+	"log"
+	"os"
+	"os/signal"
 	"time"
+
+	"github.com/mijara/statspout/repo"
+	"github.com/mijara/statspout/backend"
 )
 
+func gracefulQuitInterrupt(doneChannels []chan bool) {
+	// graceful Ctrl-C quit.
+	closeC := make(chan os.Signal, 1)
+	signal.Notify(closeC, os.Interrupt)
 
-func queryContainer(client *docker.Client, container *docker.APIContainers, done <-chan bool) {
-	statsC := make(chan *docker.Stats)
-	errC := make(chan error, 1)
+	stop := false
 
 	go func() {
-		errC <- client.Stats(docker.StatsOptions{ID: container.ID, Stats: statsC, Stream: true, Done: done})
-		close(errC)
+		for _ = range closeC {
+			for _, done := range doneChannels {
+				done <- true
+			}
+
+			stop = true
+			return
+		}
 	}()
 
 	for {
-		stats, ok := <- statsC
-		if !ok {
+		if stop {
 			break
 		}
 
-		fmt.Println(stats.CPUStats.CPUUsage.TotalUsage)
+		time.Sleep(1 * time.Second)
 	}
 }
 
-
 func main() {
-	client, err := docker.NewClient("unix:///var/run/docker.sock")
+	endpoint, err := backend.NewEndpointUnix("unix:///var/run/docker.sock")
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
-	containers, err := client.ListContainers(docker.ListContainersOptions{})
+	containers, err := backend.GetContainers(endpoint)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
-	done := make(chan bool)
+	output := repo.Stdout{}
 
-	for _, container := range containers {
-		go queryContainer(client, &container, done)
+	// query containers and store done channels to stop each goroutine.
+	var doneChannels []chan bool
+	for i := 0; i < len(containers); i++ {
+		doneChannels = append(doneChannels, backend.Query(endpoint, &containers[i], output))
 	}
 
-	time.Sleep(5 * time.Second)
-
-	done <- true
+	// graceful Ctrl-C quit.
+	gracefulQuitInterrupt(doneChannels)
 }

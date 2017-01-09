@@ -61,7 +61,7 @@ func main() {
 	// query containers and store done channels to stop each goroutine.
 	var doneChannels []chan bool
 	for i := 0; i < len(containers); i++ {
-		doneChannels = append(doneChannels, backend.Query(endpoint, &containers[i], output))
+		doneChannels = append(doneChannels, backend.Query(endpoint, &containers[i], output, 5 * time.Second))
 	}
 
 	// graceful Ctrl-C quit.

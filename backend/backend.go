@@ -46,13 +46,14 @@ func GetContainers(endpoint *Endpoint) ([]statspout.Container, error) {
 
 // Queries all containers using the specific Endpoint Client implementation. Each container
 // is queried in a different Goroutine to improve performance.
-func Query(endpoint *Endpoint, container *statspout.Container, repo repo.Interface) (chan bool) {
+func Query(endpoint *Endpoint, container *statspout.Container, repo repo.Interface, interval time.Duration) (chan bool) {
 	done := make(chan bool)
-	go queryContainer(endpoint.client, container, repo, done)
+	go queryContainer(endpoint.client, container, repo, done, interval)
 	return done
 }
 
-func queryContainer(client *docker.Client, container *statspout.Container, repo repo.Interface, done chan bool) {
+func queryContainer(client *docker.Client, container *statspout.Container, repo repo.Interface, done chan bool,
+		interval time.Duration) {
 	statsC := make(chan *docker.Stats)
 	errC := make(chan error, 1)
 
@@ -68,7 +69,7 @@ func queryContainer(client *docker.Client, container *statspout.Container, repo 
 
 	// receive stats from container, ignore stats that are received in between ticker times.
 	// TODO: this may be not the best approach, but we have to test.
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(interval)
 
 	stats, ok := <-statsC
 	if !ok {

@@ -8,3 +8,4 @@ Supported Repositories:
 - Stdout (for testing)
 - MongoDB (using https://github.com/go-mgo/mgo)
 - Prometheus (as a scapre source, using github.com/prometheus/client_golang/prometheus)
+- InfluxDB (using https://github.com/influxdata/influxdb/tree/master/client)

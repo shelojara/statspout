@@ -16,8 +16,11 @@ Supported Repositories:
 As a CLI, run the following on a console:
 
 ```
-./statspout -socket=<socket> -interval=<interval> -repository=<repository> {options}
+./statspout [-socket=<socket>] [-interval=<interval>] [-repository=<repository>] {options}
 ```
+
+If no option is given, the program will run on the default Docker Socket, with an interval of 5 seconds and `stdout` as
+repository (this is done so you can quickly check what this tool does, without setting a DB or service).
 
 Where:
 - `socket`: unix socket to connect to Docker. (In the future this will be a sub-option of the unix mode).

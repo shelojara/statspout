@@ -44,13 +44,13 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// start the Mongo Repo.
-	output, err := repo.NewMongo()
+	// start the Repo.
+	repository, err := repo.NewInfluxDB("http://localhost:8086", "allstats")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	defer output.Close()
+	defer repository.Close()
 
 	// get containers.
 	containers, err := backend.GetContainers(endpoint)
@@ -61,7 +61,7 @@ func main() {
 	// query containers and store done channels to stop each goroutine.
 	var doneChannels []chan bool
 	for i := 0; i < len(containers); i++ {
-		doneChannels = append(doneChannels, backend.Query(endpoint, &containers[i], output, 5 * time.Second))
+		doneChannels = append(doneChannels, backend.Query(endpoint, &containers[i], repository, 5 * time.Second))
 	}
 
 	// graceful Ctrl-C quit.

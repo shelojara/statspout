@@ -7,14 +7,17 @@ import (
 )
 
 type Stdout struct {
-
 }
 
 func NewStdout() *Stdout {
 	return &Stdout{}
 }
 
-func (out *Stdout) Push(stats *statspout.Stats) error {
+func (stdout *Stdout) Push(stats *statspout.Stats) error {
 	fmt.Println(stats)
 	return nil
+}
+
+func (stdout *Stdout) Close() {
+
 }

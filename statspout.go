@@ -12,6 +12,11 @@ import (
 )
 
 var (
+	socket = flag.String(
+		"socket",
+		"/var/run/docker.sock",
+		"Unix socket to connect to Docker.")
+
 	// which repository to use.
 	repository = flag.String(
 		"repository",
@@ -61,7 +66,7 @@ func main() {
 	flag.Parse()
 
 	// start the Docker Endpoint.
-	endpoint, err := backend.NewEndpointUnix("unix:///var/run/docker.sock")
+	endpoint, err := backend.NewEndpointUnix("unix://" + *socket)
 	if err != nil {
 		log.Fatal(err)
 	}

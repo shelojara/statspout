@@ -16,13 +16,15 @@ Supported Repositories:
 As a CLI, run the following on a console:
 
 ```
-./statspout -interval=<interval> -repository=<repository> {options}
+./statspout -socket=<socket> -interval=<interval> -repository=<repository> {options}
 ```
 
 Where:
+- `socket`: unix socket to connect to Docker. (In the future this will be a sub-option of the unix mode).
+            Default: `/var/run/docker.sock`
 - `interval`: seconds between each stat, in seconds. Minimum is 1 second. Default is `5`.
 - `repository`: which repository to use (they're listed in the Supported Repositories list, in special font)
-  each repository will bound different options. Default is `stdout`.
+                each repository will bound different options. Default is `stdout`.
 
 ## Specific Options
 

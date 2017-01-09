@@ -18,7 +18,8 @@ type Stats struct {
 	Timestamp time.Time
 
 	// associated container of this stats.
-	Container *Container
+	ID string
+	Name string
 
 	// CPU usage percent.
 	CpuPercent float64
@@ -32,6 +33,6 @@ type Stats struct {
 
 func (stats *Stats) String() string {
 	return fmt.Sprintf("[%s] {%s} CPU: %f%%, MEM: %f%% [%d Bytes]",
-		stats.Container.ID[:12], stats.Timestamp,
+		stats.ID[:12], stats.Timestamp,
 		stats.CpuPercent, stats.MemoryPercent, stats.MemoryUsage)
 }

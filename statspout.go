@@ -38,17 +38,25 @@ func gracefulQuitInterrupt(doneChannels []chan bool) {
 }
 
 func main() {
+	// start the Docker Endpoint.
 	endpoint, err := backend.NewEndpointUnix("unix:///var/run/docker.sock")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	containers, err := backend.GetContainers(endpoint)
+	// start the Mongo Repo.
+	output, err := repo.NewMongo()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	output := repo.Stdout{}
+	defer output.Close()
+
+	// get containers.
+	containers, err := backend.GetContainers(endpoint)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// query containers and store done channels to stop each goroutine.
 	var doneChannels []chan bool

@@ -5,5 +5,5 @@ import (
 )
 
 type Interface interface {
-	Push(stats *statspout.Stats)
+	Push(stats *statspout.Stats) error
 }

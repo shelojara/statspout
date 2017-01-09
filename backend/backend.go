@@ -62,7 +62,8 @@ func queryContainer(client *docker.Client, container *statspout.Container, repo 
 	}()
 
 	containerStats := statspout.Stats{
-		Container: container,
+		ID: container.ID,
+		Name: container.Names[0][1:],
 	}
 
 	// receive stats from container, ignore stats that are received in between ticker times.
@@ -86,7 +87,7 @@ func queryContainer(client *docker.Client, container *statspout.Container, repo 
 		case <-ticker.C:
 			pushStats(&containerStats, repo, stats)
 		default:
-			//
+		//
 		}
 	}
 }

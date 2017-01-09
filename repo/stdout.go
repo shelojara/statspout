@@ -10,6 +10,11 @@ type Stdout struct {
 
 }
 
-func (out Stdout) Push(stats *statspout.Stats) {
+func NewStdout() *Stdout {
+	return &Stdout{}
+}
+
+func (out *Stdout) Push(stats *statspout.Stats) error {
 	fmt.Println(stats)
+	return nil
 }

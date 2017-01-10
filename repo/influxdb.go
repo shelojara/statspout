@@ -25,8 +25,8 @@ func NewInfluxDB(address string, database string) (*InfluxDB, error) {
 }
 
 func (influx *InfluxDB) Push(stats *statspout.Stats) error {
-	influx.pushResource(stats, "cpu-usage", stats.CpuPercent)
-	influx.pushResource(stats, "mem-usage", stats.MemoryPercent)
+	influx.pushResource(stats, "cpu_usage", stats.CpuPercent)
+	influx.pushResource(stats, "mem_usage", stats.MemoryPercent)
 
 	return nil
 }
@@ -41,14 +41,14 @@ func (influx *InfluxDB) pushResource(stats *statspout.Stats, resource string, va
 	}
 
 	tags := map[string]string{
-		"resource": resource,
+		"container": stats.Name,
 	}
 
 	fields := map[string]interface{}{
 		"value":   value,
 	}
 
-	pt, err := client.NewPoint(stats.Name, tags, fields, stats.Timestamp)
+	pt, err := client.NewPoint(resource, tags, fields, stats.Timestamp)
 	bp.AddPoint(pt)
 
 	err = influx.client.Write(bp)

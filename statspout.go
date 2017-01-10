@@ -9,6 +9,7 @@ import (
 	"github.com/mijara/statspout/repo"
 	"github.com/mijara/statspout/backend"
 	"flag"
+	"errors"
 )
 
 var (
@@ -21,7 +22,7 @@ var (
 	repository = flag.String(
 		"repository",
 		"stdout",
-		"One of: stdout, mongodb, prometheus, influxdb")
+		"One of: stdout, mongodb, prometheus, influxdb, rest")
 
 	// seconds between each stat, in seconds. Minimum is 1 second.
 	interval = flag.Int(
@@ -33,6 +34,7 @@ var (
 	influxDBOpts   = repo.CreateInfluxDBOpts()
 	mongoDBOpts    = repo.CreateMongoOpts()
 	prometheusOpts = repo.CreatePrometheusOpts()
+	restOpts       = repo.CreateRestOpts()
 )
 
 func gracefulQuitInterrupt(doneChannels []chan bool) {
@@ -118,6 +120,13 @@ func getRepositoryObject() (repo.Interface, error) {
 			*influxDBOpts["address"],
 			*influxDBOpts["database"],
 		)
+	case "rest":
+		r, err = repo.NewRest(
+			*restOpts["address"],
+			*restOpts["path"],
+		)
+	default:
+		return nil, errors.New("Not know repository: " + *repository)
 	}
 
 	if err != nil {

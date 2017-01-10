@@ -15,20 +15,20 @@ type Container struct {
 // Standard project stats to not relay on a specific docker client implementation.
 type Stats struct {
 	// Timestamp of this stats.
-	Timestamp time.Time
+	Timestamp time.Time	`json:"@timestamp"`
 
 	// associated container of this stats.
-	ID string
-	Name string
+	ID string `json:"id"`
+	Name string `json:"name"`
 
 	// CPU usage percent.
-	CpuPercent float64
+	CpuPercent float64 `json:"cpu_percent"`
 
 	// Memory usage in bytes.
-	MemoryUsage uint64
+	MemoryUsage uint64 `json:"mem_usage"`
 
 	// Memory usage percent.
-	MemoryPercent float64
+	MemoryPercent float64 `json:"mem_percent"`
 }
 
 func (stats *Stats) String() string {

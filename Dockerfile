@@ -1,10 +1,10 @@
-FROM golang
+FROM centurylink/ca-certs
 
-ADD . /go
+COPY bin/statspout /
 
-RUN go install github.com/mijara/statspout
+WORKDIR /
 
 EXPOSE 8080
 
-ENTRYPOINT ["statspout"]
+ENTRYPOINT ["/statspout"]
 

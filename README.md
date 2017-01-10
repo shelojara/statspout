@@ -1,7 +1,7 @@
 Statspout
 =========
 
-Service that retrieves stats from Docker Containers and sends them to some repository (a.k.a DB).
+Docker Container stats routing that works with several repositories. 
 
 Supported Repositories:
 
@@ -75,8 +75,12 @@ repository (this is done so you can quickly check what this tool does, without s
 
 The container version is available at https://hub.docker.com/r/mijara/statspout/
 
-Run with:
+For a quick test, run:
 
 ```
-docker run -v /var/run/docker.sock:/var/run/docker.sock -p 8080:8080 mijara/statspout [options...]
+docker run -d -v /var/run/docker.sock:/var/run/docker.sock -p 8080:8080 mijara/statspout -repository=rest
 ```
+
+Then go to http://IP:8080/stats
+
+And watch JSON stats of your containers.

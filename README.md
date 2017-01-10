@@ -25,31 +25,41 @@ repository (this is done so you can quickly check what this tool does, without s
 
 
 ### Top Level Opts:
-- `socket`: unix socket to connect to Docker. (In the future this will be a sub-option of the unix mode).
-            Default: `/var/run/docker.sock`
+- `mode`: mode to create the client: socket, http, tls. Default: `socket`
 - `interval`: seconds between each stat, in seconds. Minimum is 1 second. Default is `5`.
 - `repository`: which repository to use (they're listed in the Supported Repositories list, in special font)
                 each repository will bound different options. Default is `stdout`.
 
 
-## Specific Options
+### Mode Options
+
+#### Socket
+
+- `socket.path`: unix socket to connect to Docker. Default: `/var/run/docker.sock`
+
+#### HTTP
+
+- `http.address`: http address for Docker. Default: `localhost:4243`
 
 
-### MongoDB
+### Specific Repository Options
+
+
+#### MongoDB
 - `mongo.address`: Address of the MongoDB Endpoint. Default: `localhost:27017`
 - `mongo.database`: Database for the collection. Default: `statspout`
 - `mongo.collection`: Collection for the stats. Default: `stats`
 
 
-### Prometheus
+#### Prometheus
 - `prometheus.address`: Address on which the Prometheus HTTP Server will publish metrics. Default: `:8080`
 
 
-### InfluxDB
+#### InfluxDB
 - `influxdb.address`: Address of the InfluxDB Endpoint. Default: `http://localhost:8086`
 - `influxdb.database`: Database to store data. Default: `statspout`
 
 
-### Rest
+#### Rest
 - `rest.address`: Address on which the Rest HTTP Server will publish data. Default: `:8080`
 - `rest.path`: Path on which data is served. Default: `/stats`

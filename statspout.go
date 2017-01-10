@@ -10,25 +10,57 @@ import (
 	"github.com/mijara/statspout/backend"
 	"flag"
 	"errors"
+	"github.com/fsouza/go-dockerclient"
 )
 
 var (
-	socket = flag.String(
-		"socket",
-		"/var/run/docker.sock",
-		"Unix socket to connect to Docker.")
+	// seconds between each stat, in seconds. Minimum is 1 second.
+	interval = flag.Int(
+		"interval",
+		5,
+		"Interval between each stats query.")
 
 	// which repository to use.
 	repository = flag.String(
 		"repository",
 		"stdout",
-		"One of: stdout, mongodb, prometheus, influxdb, rest")
+		"One of: stdout, mongodb, prometheus, influxdb, rest.")
 
-	// seconds between each stat, in seconds. Minimum is 1 second.
-	interval = flag.Int(
-		"interval",
-		5,
-		"Interval between each stats query")
+	// Which mode use for the connection.
+	mode = flag.String(
+		"mode",
+		"socket",
+		"Mode to create the client: socket, http, tls.")
+
+	modeSocketPath = flag.String(
+		"socket.path",
+		"/var/run/docker.sock",
+		"Unix socket to connect to Docker.")
+
+	modeHTTPAddress = flag.String(
+		"http.address",
+		"localhost:4243",
+		"Docker API Address.")
+
+	modeTLSAddress = flag.String(
+		"tls.address",
+		"localhost:4243",
+		"Docker API Address.")
+
+	modeTLSCert = flag.String(
+		"tls.cert",
+		"",
+		"TLS Certificate.")
+
+	modeTLSKey = flag.String(
+		"tls.key",
+		"",
+		"TLS Key.")
+
+	modeTLSCA = flag.String(
+		"tls.ca",
+		"",
+		"TLS CA.")
 
 	// specific maps of options.
 	influxDBOpts   = repo.CreateInfluxDBOpts()
@@ -67,14 +99,18 @@ func gracefulQuitInterrupt(doneChannels []chan bool) {
 func main() {
 	flag.Parse()
 
+	if *interval < 1 {
+		log.Fatal("Interval cannot be less than 1.")
+	}
+
 	// start the Docker Endpoint.
-	endpoint, err := backend.NewEndpointUnix("unix://" + *socket)
+	endpoint, err := createClientFromFlags()
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// start the Repo.
-	repository, err := getRepositoryObject()
+	repository, err := createRepositoryFromFlags()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -98,40 +134,44 @@ func main() {
 	gracefulQuitInterrupt(doneChannels)
 }
 
-func getRepositoryObject() (repo.Interface, error) {
-	var r repo.Interface
-	var err error
-
+func createRepositoryFromFlags() (repo.Interface, error) {
 	switch *repository {
 	case "stdout":
-		r = repo.NewStdout()
+		return repo.NewStdout(), nil
 	case "mongodb":
-		r, err = repo.NewMongo(
+		return repo.NewMongo(
 			*mongoDBOpts["address"],
 			*mongoDBOpts["database"],
 			*mongoDBOpts["collection"],
 		)
 	case "prometheus":
-		r, err = repo.NewPrometheus(
+		return repo.NewPrometheus(
 			*prometheusOpts["address"],
 		)
 	case "influxdb":
-		r, err = repo.NewInfluxDB(
+		return repo.NewInfluxDB(
 			*influxDBOpts["address"],
 			*influxDBOpts["database"],
 		)
 	case "rest":
-		r, err = repo.NewRest(
+		return repo.NewRest(
 			*restOpts["address"],
 			*restOpts["path"],
 		)
-	default:
-		return nil, errors.New("Not know repository: " + *repository)
 	}
 
-	if err != nil {
-		return nil, err
+	return nil, errors.New("Unknown repository: " + *repository)
+}
+
+func createClientFromFlags() (*backend.Endpoint, error) {
+	switch *mode {
+	case "socket":
+		return backend.NewUnixEndpoint(*modeSocketPath)
+	case "http":
+		return backend.NewHTTPEndpoint(*modeHTTPAddress)
+	case "tls":
+		return backend.NewTLSEndpoint(*modeTLSAddress, *modeTLSCert, *modeTLSKey, *modeTLSCA)
 	}
 
-	return r, nil
+	return nil, errors.New("Unknown mode: " + *mode)
 }

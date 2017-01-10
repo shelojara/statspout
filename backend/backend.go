@@ -9,15 +9,42 @@ import (
 	"github.com/mijara/statspout/repo"
 	"github.com/fsouza/go-dockerclient"
 	"github.com/prometheus/common/log"
+	"strings"
+	"errors"
 )
 
 type Endpoint struct {
 	client *docker.Client
 }
 
-// Creates an Endpoint holding data connection for the current Client.
-func NewEndpointUnix(sockPath string) (*Endpoint, error) {
-	client, err := docker.NewClient(sockPath)
+// Creates an Endpoint using Unix Socket.
+func NewUnixEndpoint(sockPath string) (*Endpoint, error) {
+	client, err := docker.NewClient("unix://" + sockPath)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Endpoint{
+		client: client,
+	}, nil
+}
+
+// Creates an Endpoint using the HTTP.
+func NewHTTPEndpoint(address string) (*Endpoint, error) {
+	client, err := docker.NewClient("http://" + address)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Endpoint{
+		client: client,
+	}, nil
+}
+
+// Creates an Endpoint using the HTTP.
+func NewTLSEndpoint(address, cert, key, ca string) (*Endpoint, error) {
+	// the client checks if the files paths are valid.
+	client, err := docker.NewTLSClient("https://" + address, cert, key, ca)
 	if err != nil {
 		return nil, err
 	}

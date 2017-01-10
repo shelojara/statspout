@@ -9,8 +9,6 @@ import (
 	"github.com/mijara/statspout/repo"
 	"github.com/fsouza/go-dockerclient"
 	"github.com/prometheus/common/log"
-	"strings"
-	"errors"
 )
 
 type Endpoint struct {

@@ -5,12 +5,11 @@ import (
 	"os"
 	"os/signal"
 	"time"
+	"flag"
+	"errors"
 
 	"github.com/mijara/statspout/repo"
 	"github.com/mijara/statspout/backend"
-	"flag"
-	"errors"
-	"github.com/fsouza/go-dockerclient"
 )
 
 var (
@@ -72,7 +71,7 @@ var (
 func gracefulQuitInterrupt(doneChannels []chan bool) {
 	// graceful Ctrl-C quit.
 	closeC := make(chan os.Signal, 1)
-	signal.Notify(closeC, os.Interrupt)
+	signal.Notify(closeC, os.Interrupt, os.Kill)
 
 	stop := false
 

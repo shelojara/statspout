@@ -70,3 +70,13 @@ repository (this is done so you can quickly check what this tool does, without s
 #### Rest
 - `rest.address`: Address on which the Rest HTTP Server will publish data. Default: `:8080`
 - `rest.path`: Path on which data is served. Default: `/stats`
+
+## Run as a Docker Container
+
+The container version is available at https://hub.docker.com/r/mijara/statspout/
+
+Run with:
+
+```
+docker run -v /var/run/docker.sock:/var/run/docker.sock -p 8080:8080 mijara/statspout [options...]
+```

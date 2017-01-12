@@ -7,3 +7,4 @@ EXPOSE 8080
 WORKDIR /
 
 ENTRYPOINT ["/statspout"]
+

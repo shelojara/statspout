@@ -1,4 +1,4 @@
-package repo
+package common
 
 import (
 	"net/http"
@@ -13,15 +13,20 @@ type Rest struct {
 	stats map[string]statspout.Stats
 }
 
+type RestOpts struct {
+	Address string
+	Path    string
+}
+
 // instance of this repository, due to the handler callback limitations.
 var rest Rest
 
-func NewRest(address, path string) (*Rest, error) {
-	http.HandleFunc(checkAndFixPrefixSlash(path), handler)
+func NewRest(opts RestOpts) (*Rest, error) {
+	http.HandleFunc(checkAndFixPrefixSlash(opts.Path), handler)
 
 	rest.stats = map[string]statspout.Stats{}
 
-	go serveRest(address)
+	go serveRest(opts.Address)
 
 	return &rest, nil
 }
@@ -51,18 +56,16 @@ func (rest *Rest) Push(stats *statspout.Stats) error {
 func (rest *Rest) Close() {
 }
 
-func CreateRestOpts() map[string]*string {
-	return map[string]*string {
-		"address": flag.String(
-			"rest.address",
-			":8080",
-			"Address on which the Rest HTTP Server will publish data"),
+func CreateRestOpts(opts *RestOpts) {
+	flag.StringVar(&opts.Address,
+		"rest.address",
+		":8080",
+		"Address on which the Rest HTTP Server will publish data")
 
-		"path": flag.String(
-			"rest.path",
-			"/stats",
-			"Path on which data is served."),
-	}
+	flag.StringVar(&opts.Path,
+		"rest.path",
+		"/stats",
+		"Path on which data is served.")
 }
 
 func serveRest(address string) {

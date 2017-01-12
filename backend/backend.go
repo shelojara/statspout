@@ -80,7 +80,7 @@ func Query(endpoint *Endpoint, container *statspout.Container, repo repo.Interfa
 }
 
 func queryContainer(client *docker.Client, container *statspout.Container, repo repo.Interface, done chan bool,
-		interval time.Duration) {
+interval time.Duration) {
 	statsC := make(chan *docker.Stats)
 	errC := make(chan error, 1)
 

@@ -1,4 +1,4 @@
-package repo
+package common
 
 import (
 	"net/http"
@@ -12,11 +12,15 @@ import (
 )
 
 type Prometheus struct {
-	cpuUsagePercent *prometheus.GaugeVec
+	cpuUsagePercent    *prometheus.GaugeVec
 	memoryUsagePercent *prometheus.GaugeVec
 }
 
-func NewPrometheus(address string) (*Prometheus, error) {
+type PrometheusOpts struct {
+	Address string
+}
+
+func NewPrometheus(opts PrometheusOpts) (*Prometheus, error) {
 	// hacky way of removing the default Go Collector.
 	prometheus.Unregister(prometheus.NewGoCollector())
 
@@ -43,10 +47,10 @@ func NewPrometheus(address string) (*Prometheus, error) {
 	http.Handle("/metrics", promhttp.Handler())
 
 	// start HTTP Server.
-	go serve(address)
+	go serve(opts.Address)
 
 	return &Prometheus{
-		cpuUsagePercent: cpuUsagePercent,
+		cpuUsagePercent:    cpuUsagePercent,
 		memoryUsagePercent: memoryUsagePercent,
 	}, nil
 }
@@ -66,11 +70,9 @@ func serve(address string) {
 	log.Fatal(http.ListenAndServe(address, nil))
 }
 
-func CreatePrometheusOpts() map[string]*string {
-	return map[string]*string {
-		"address": flag.String(
-			"prometheus.address",
-			":8080",
-			"Address on which the Prometheus HTTP Server will publish metrics"),
-	}
+func CreatePrometheusOpts(opts *PrometheusOpts) {
+	flag.StringVar(&opts.Address,
+		"prometheus.address",
+		":8080",
+		"Address on which the Prometheus HTTP Server will publish metrics")
 }

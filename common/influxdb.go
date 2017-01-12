@@ -1,33 +1,37 @@
-package repo
+package common
 
 import (
-	"github.com/influxdata/influxdb/client/v2"
-
-	"github.com/mijara/statspout/data"
 	"flag"
+
+	"github.com/influxdata/influxdb/client/v2"
+	"github.com/mijara/statspout/data"
 )
 
 type InfluxDB struct {
-	client client.Client
+	client   client.Client
 	database string
 }
 
-func NewInfluxDB(address string, database string) (*InfluxDB, error) {
-	c, err := client.NewHTTPClient(client.HTTPConfig{Addr: address})
+type InfluxOpts struct {
+	Address  string
+	Database string
+}
+
+func NewInfluxDB(opts InfluxOpts) (*InfluxDB, error) {
+	c, err := client.NewHTTPClient(client.HTTPConfig{Addr: opts.Address})
 	if err != nil {
 		return nil, err
 	}
 
 	return &InfluxDB{
-		database: database,
-		client: c,
+		database: opts.Database,
+		client:   c,
 	}, nil
 }
 
 func (influx *InfluxDB) Push(stats *statspout.Stats) error {
 	influx.pushResource(stats, "cpu_usage", stats.CpuPercent)
 	influx.pushResource(stats, "mem_usage", stats.MemoryPercent)
-
 	return nil
 }
 
@@ -63,16 +67,14 @@ func (influx *InfluxDB) Close() {
 	influx.client.Close()
 }
 
-func CreateInfluxDBOpts() map[string]*string {
-	return map[string]*string {
-		"address": flag.String(
-			"influxdb.address",
-			"http://localhost:8086",
-			"Address of the InfluxDB Endpoint"),
+func CreateInfluxDBOpts(opts *InfluxOpts) {
+	flag.StringVar(&opts.Address,
+		"influxdb.address",
+		"http://localhost:8086",
+		"Address of the InfluxDB Endpoint")
 
-		"database": flag.String(
-			"influxdb.database",
-			"statspout",
-			"Database to store data"),
-	}
+	flag.StringVar(&opts.Database,
+		"influxdb.database",
+		"statspout",
+		"Database to store data")
 }

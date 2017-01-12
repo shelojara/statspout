@@ -10,13 +10,16 @@ import (
 	"github.com/mijara/statspout/backend"
 )
 
+// Graceful Ctrl-C quit, alerts each goroutine that the application is being
+// interrupted, also, keeps the application alive.
 func gracefulQuitInterrupt(doneChannels []chan bool) {
-	// graceful Ctrl-C quit.
 	closeC := make(chan os.Signal, 1)
 	signal.Notify(closeC, os.Interrupt, os.Kill)
 
+	// once this becomes true, we should quit.
 	stop := false
 
+	// goroutine to listen to system interrupts.
 	go func() {
 		for _ = range closeC {
 			for _, done := range doneChannels {

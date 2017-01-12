@@ -9,59 +9,57 @@ import (
 	"github.com/mijara/statspout/common"
 )
 
-type Opts struct {
-	Interval   int
-	Repository string
+// Structure to hold different options given by the client.
+type opts struct {
+	Interval   int    // Seconds between each stats query.
+	Repository string // Which repository to use.
 
 	Mode struct {
-		Name string
+		Name string // Client mode name
 
 		Socket struct {
-			Path string
+			Path string // Unix socket to connect Docker
 		}
 
 		HTTP struct {
-			Address string
+			Address string // Docker API address
 		}
 
 		TLS struct {
-			Address string
-			Cert    string
-			Key     string
-			CA      string
+			Address string // Docker API address
+			Cert    string // TLS certificate
+			Key     string // TLS key
+			CA      string // TLS CA
 		}
 	}
 
-	Influx     common.InfluxOpts
-	Mongo      common.MongoOpts
-	Rest       common.RestOpts
-	Prometheus common.PrometheusOpts
+	Influx     common.InfluxOpts     // Influx specific options
+	Mongo      common.MongoOpts      // Mongo specific options.
+	Rest       common.RestOpts       // Rest specific options.
+	Prometheus common.PrometheusOpts // Prometheus specific options.
 }
 
-var (
-	i *Opts
-)
+// Single instance of this package.
+var i *opts
 
-func GetOpts() *Opts {
+// Gets options struct instance.
+func GetOpts() *opts {
 	if i != nil {
 		return i
 	}
 
-	i = &Opts{}
+	i = &opts{}
 
-	// seconds between each stat, in seconds. Minimum is 1 second.
 	flag.IntVar(&i.Interval,
 		"interval",
 		5,
 		"Interval between each stats query.")
 
-	// which repository to use.
 	flag.StringVar(&i.Repository,
 		"repository",
 		"stdout",
 		"One of: stdout, mongodb, prometheus, influxdb, rest.")
 
-	// Which mode use for the connection.
 	flag.StringVar(&i.Mode.Name,
 		"mode",
 		"socket",
@@ -97,7 +95,6 @@ func GetOpts() *Opts {
 		"",
 		"TLS CA.")
 
-	// specific maps of options.
 	common.CreateInfluxDBOpts(&i.Influx)
 	common.CreateMongoOpts(&i.Mongo)
 	common.CreatePrometheusOpts(&i.Prometheus)
@@ -108,6 +105,7 @@ func GetOpts() *Opts {
 	return i
 }
 
+// Creates the repository from the options given by the client.
 func CreateRepositoryFromFlags() (repo.Interface, error) {
 	switch GetOpts().Repository {
 	case "stdout":
@@ -125,6 +123,7 @@ func CreateRepositoryFromFlags() (repo.Interface, error) {
 	return nil, errors.New("Unknown repository: " + i.Repository)
 }
 
+// Creates the client from the options given by the client.
 func CreateClientFromFlags() (*backend.Endpoint, error) {
 	switch GetOpts().Mode.Name {
 	case "socket":

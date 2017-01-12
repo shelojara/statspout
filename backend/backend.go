@@ -42,7 +42,7 @@ func NewHTTPEndpoint(address string) (*Endpoint, error) {
 // Creates an Endpoint using the HTTP.
 func NewTLSEndpoint(address, cert, key, ca string) (*Endpoint, error) {
 	// the client checks if the files paths are valid.
-	client, err := docker.NewTLSClient("https://" + address, cert, key, ca)
+	client, err := docker.NewTLSClient("https://"+address, cert, key, ca)
 	if err != nil {
 		return nil, err
 	}
@@ -79,13 +79,12 @@ func Query(endpoint *Endpoint, container *statspout.Container, repo repo.Interfa
 	return done
 }
 
-func queryContainer(client *docker.Client, container *statspout.Container, repo repo.Interface, done chan bool,
-interval time.Duration) {
+func queryContainer(cli *docker.Client, container *statspout.Container, repo repo.Interface, done chan bool, interval time.Duration) {
 	statsC := make(chan *docker.Stats)
 	errC := make(chan error, 1)
 
 	go func() {
-		errC <- client.Stats(docker.StatsOptions{ID: container.ID, Stats: statsC, Stream: true, Done: done})
+		errC <- cli.Stats(docker.StatsOptions{ID: container.ID, Stats: statsC, Stream: true, Done: done})
 		close(errC)
 	}()
 

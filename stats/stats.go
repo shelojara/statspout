@@ -1,4 +1,4 @@
-package statspout
+package stats
 
 import (
 	"fmt"

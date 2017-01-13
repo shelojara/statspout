@@ -5,10 +5,10 @@ package backend
 import (
 	"time"
 
-	"github.com/mijara/statspout/data"
 	"github.com/mijara/statspout/repo"
 	"github.com/fsouza/go-dockerclient"
 	"github.com/prometheus/common/log"
+	"github.com/mijara/statspout/stats"
 )
 
 type Endpoint struct {
@@ -53,15 +53,15 @@ func NewTLSEndpoint(address, cert, key, ca string) (*Endpoint, error) {
 }
 
 // Retrieves and returns all containers data for future reference.
-func GetContainers(endpoint *Endpoint) ([]statspout.Container, error) {
+func GetContainers(endpoint *Endpoint) ([]stats.Container, error) {
 	containers, err := endpoint.client.ListContainers(docker.ListContainersOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	var result []statspout.Container
+	var result []stats.Container
 	for _, container := range containers {
-		result = append(result, statspout.Container{
+		result = append(result, stats.Container{
 			ID:    container.ID,
 			Names: container.Names,
 			Image: container.Image,
@@ -73,13 +73,13 @@ func GetContainers(endpoint *Endpoint) ([]statspout.Container, error) {
 
 // Queries all containers using the specific Endpoint Client implementation. Each container
 // is queried in a different Goroutine to improve performance.
-func Query(endpoint *Endpoint, container *statspout.Container, repo repo.Interface, interval time.Duration) (chan bool) {
+func Query(endpoint *Endpoint, container *stats.Container, repo repo.Interface, interval time.Duration) (chan bool) {
 	done := make(chan bool)
 	go queryContainer(endpoint.client, container, repo, done, interval)
 	return done
 }
 
-func queryContainer(cli *docker.Client, container *statspout.Container, repo repo.Interface, done chan bool, interval time.Duration) {
+func queryContainer(cli *docker.Client, container *stats.Container, repo repo.Interface, done chan bool, interval time.Duration) {
 	statsC := make(chan *docker.Stats)
 	errC := make(chan error, 1)
 
@@ -88,7 +88,7 @@ func queryContainer(cli *docker.Client, container *statspout.Container, repo rep
 		close(errC)
 	}()
 
-	containerStats := statspout.Stats{
+	containerStats := stats.Stats{
 		ID:   container.ID,
 		Name: container.Names[0][1:],
 	}
@@ -129,7 +129,7 @@ func queryContainer(cli *docker.Client, container *statspout.Container, repo rep
 	}
 }
 
-func pushStats(containerStats *statspout.Stats, repo repo.Interface, stats *docker.Stats) error {
+func pushStats(containerStats *stats.Stats, repo repo.Interface, stats *docker.Stats) error {
 	containerStats.Timestamp = stats.Read
 	containerStats.CpuPercent = calcCpuPercent(stats)
 	containerStats.MemoryPercent = calcMemoryPercent(stats)

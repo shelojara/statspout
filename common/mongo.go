@@ -3,8 +3,10 @@ package common
 import (
 	"flag"
 
-	"github.com/mijara/statspout/data"
 	"gopkg.in/mgo.v2"
+
+	"github.com/mijara/statspout/repo"
+	"github.com/mijara/statspout/stats"
 )
 
 type Mongo struct {
@@ -19,7 +21,7 @@ type MongoOpts struct {
 	Collection string
 }
 
-func NewMongo(opts MongoOpts) (*Mongo, error) {
+func NewMongo(opts *MongoOpts) (*Mongo, error) {
 	session, err := mgo.Dial(opts.Address)
 	if err != nil {
 		return nil, err
@@ -32,10 +34,14 @@ func NewMongo(opts MongoOpts) (*Mongo, error) {
 	}, nil
 }
 
-func (mongo *Mongo) Push(stats *statspout.Stats) error {
+func (*Mongo) Create(v interface{}) (repo.Interface, error) {
+	return NewMongo(v.(*MongoOpts))
+}
+
+func (mongo *Mongo) Push(s *stats.Stats) error {
 	c := mongo.session.DB(mongo.database).C(mongo.collection)
 
-	err := c.Insert(stats)
+	err := c.Insert(s)
 	if err != nil {
 		return err
 	}
@@ -43,23 +49,31 @@ func (mongo *Mongo) Push(stats *statspout.Stats) error {
 	return nil
 }
 
+func (*Mongo) Name() string {
+	return "mongodb"
+}
+
 func (mongo *Mongo) Close() {
 	mongo.session.Close()
 }
 
-func CreateMongoOpts(opts *MongoOpts) {
-	flag.StringVar(&opts.Address,
+func CreateMongoOpts() *MongoOpts {
+	o := &MongoOpts{}
+
+	flag.StringVar(&o.Address,
 		"mongo.address",
 		"localhost:27017",
 		"Address of the MongoDB Endpoint")
 
-	flag.StringVar(&opts.Database,
+	flag.StringVar(&o.Database,
 		"mongo.database",
 		"statspout",
 		"Database for the collection")
 
-	flag.StringVar(& opts.Collection,
-			"mongo.collection",
-			"stats",
-			"Collection for the stats")
+	flag.StringVar(&o.Collection,
+		"mongo.collection",
+		"stats",
+		"Collection for the stats")
+
+	return o
 }

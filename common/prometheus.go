@@ -8,7 +8,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/mijara/statspout/data"
+	"github.com/mijara/statspout/repo"
+	"github.com/mijara/statspout/stats"
 )
 
 type Prometheus struct {
@@ -20,7 +21,15 @@ type PrometheusOpts struct {
 	Address string
 }
 
-func NewPrometheus(opts PrometheusOpts) (*Prometheus, error) {
+func (*Prometheus) Name() string {
+	return "prometheus"
+}
+
+func (*Prometheus) Create(v interface{}) (repo.Interface, error) {
+	return NewPrometheus(v.(*PrometheusOpts))
+}
+
+func NewPrometheus(opts *PrometheusOpts) (*Prometheus, error) {
 	// hacky way of removing the default Go Collector.
 	prometheus.Unregister(prometheus.NewGoCollector())
 
@@ -55,9 +64,9 @@ func NewPrometheus(opts PrometheusOpts) (*Prometheus, error) {
 	}, nil
 }
 
-func (prom *Prometheus) Push(stats *statspout.Stats) error {
-	prom.cpuUsagePercent.WithLabelValues(stats.Name).Set(stats.CpuPercent)
-	prom.memoryUsagePercent.WithLabelValues(stats.Name).Set(stats.MemoryPercent)
+func (prom *Prometheus) Push(s *stats.Stats) error {
+	prom.cpuUsagePercent.WithLabelValues(s.Name).Set(s.CpuPercent)
+	prom.memoryUsagePercent.WithLabelValues(s.Name).Set(s.MemoryPercent)
 
 	return nil
 }
@@ -70,9 +79,13 @@ func serve(address string) {
 	log.Fatal(http.ListenAndServe(address, nil))
 }
 
-func CreatePrometheusOpts(opts *PrometheusOpts) {
-	flag.StringVar(&opts.Address,
+func CreatePrometheusOpts() *PrometheusOpts {
+	o := &PrometheusOpts{}
+
+	flag.StringVar(&o.Address,
 		"prometheus.address",
 		":8080",
 		"Address on which the Prometheus HTTP Server will publish metrics")
+
+	return o
 }

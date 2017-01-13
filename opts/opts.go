@@ -10,7 +10,7 @@ import (
 )
 
 // Structure to hold different options given by the client.
-type opts struct {
+type options struct {
 	Interval   int    // Seconds between each stats query.
 	Repository string // Which repository to use.
 
@@ -40,15 +40,15 @@ type opts struct {
 }
 
 // Single instance of this package.
-var i *opts
+var i *options
 
 // Gets options struct instance.
-func GetOpts() *opts {
+func GetOpts() *options {
 	if i != nil {
 		return i
 	}
 
-	i = &opts{}
+	i = &options{}
 
 	flag.IntVar(&i.Interval,
 		"interval",
@@ -95,29 +95,28 @@ func GetOpts() *opts {
 		"",
 		"TLS CA.")
 
+	/*
 	common.CreateInfluxDBOpts(&i.Influx)
 	common.CreateMongoOpts(&i.Mongo)
 	common.CreatePrometheusOpts(&i.Prometheus)
 	common.CreateRestOpts(&i.Rest)
+	*/
 
-	flag.Parse()
+	// flag.Parse()
 
 	return i
 }
 
+func (*options) Parse() {
+	flag.Parse()
+}
+
 // Creates the repository from the options given by the client.
-func CreateRepositoryFromFlags() (repo.Interface, error) {
-	switch GetOpts().Repository {
-	case "stdout":
-		return common.NewStdout(), nil
-	case "mongodb":
-		return common.NewMongo(i.Mongo)
-	case "prometheus":
-		return common.NewPrometheus(i.Prometheus)
-	case "influxdb":
-		return common.NewInfluxDB(i.Influx)
-	case "rest":
-		return common.NewRest(i.Rest)
+func CreateRepositoryFromFlags(cfg *Config) (repo.Interface, error) {
+	for name, b := range cfg.Repositories {
+		if name == GetOpts().Repository {
+			return b.Repository.Create(b.Options)
+		}
 	}
 
 	return nil, errors.New("Unknown repository: " + i.Repository)

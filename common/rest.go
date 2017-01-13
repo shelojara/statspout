@@ -3,14 +3,15 @@ package common
 import (
 	"net/http"
 	"encoding/json"
-
-	"github.com/mijara/statspout/data"
-	"github.com/prometheus/common/log"
 	"flag"
+
+	"github.com/prometheus/common/log"
+	"github.com/mijara/statspout/repo"
+	"github.com/mijara/statspout/stats"
 )
 
 type Rest struct {
-	stats map[string]statspout.Stats
+	registry map[string]stats.Stats
 }
 
 type RestOpts struct {
@@ -21,10 +22,18 @@ type RestOpts struct {
 // instance of this repository, due to the handler callback limitations.
 var rest Rest
 
-func NewRest(opts RestOpts) (*Rest, error) {
+func (*Rest) Name() string {
+	return "rest"
+}
+
+func (*Rest) Create(v interface{}) (repo.Interface, error) {
+	return NewRest(v.(*RestOpts))
+}
+
+func NewRest(opts *RestOpts) (*Rest, error) {
 	http.HandleFunc(checkAndFixPrefixSlash(opts.Path), handler)
 
-	rest.stats = map[string]statspout.Stats{}
+	rest.registry = map[string]stats.Stats{}
 
 	go serveRest(opts.Address)
 
@@ -38,34 +47,38 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(rest.asListOfValues())
 }
 
-func (rest *Rest) asListOfValues() []statspout.Stats {
-	var list []statspout.Stats
+func (rest *Rest) asListOfValues() []stats.Stats {
+	var list []stats.Stats
 
-	for _, value := range rest.stats {
+	for _, value := range rest.registry {
 		list = append(list, value)
 	}
 
 	return list
 }
 
-func (rest *Rest) Push(stats *statspout.Stats) error {
-	rest.stats[stats.Name] = *stats
+func (rest *Rest) Push(s *stats.Stats) error {
+	rest.registry[s.Name] = *s
 	return nil
 }
 
 func (rest *Rest) Close() {
 }
 
-func CreateRestOpts(opts *RestOpts) {
-	flag.StringVar(&opts.Address,
+func CreateRestOpts() *RestOpts {
+	o := &RestOpts{}
+
+	flag.StringVar(&o.Address,
 		"rest.address",
 		":8080",
 		"Address on which the Rest HTTP Server will publish data")
 
-	flag.StringVar(&opts.Path,
+	flag.StringVar(&o.Path,
 		"rest.path",
 		"/stats",
 		"Path on which data is served.")
+
+	return o
 }
 
 func serveRest(address string) {

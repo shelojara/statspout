@@ -19,6 +19,6 @@ type Interface interface {
 	// Close the service.
 	Close()
 
-	// Canonical name of this repository.
+	// Canonical name of this repository, used to identify it in the command line flags.
 	Name() string
 }

@@ -85,7 +85,7 @@ Then go to http://IP:8080/stats
 
 And watch JSON stats of your containers.
 
-## Creating your own Repository.
+## Creating your own Repository
 
 This application is shaped as a framework, with the main file being the piece of code that makes the default "moves". 
 However, you can completely discard that main file and compile your own with solely the `statspout` framework.

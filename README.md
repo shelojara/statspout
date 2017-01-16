@@ -25,10 +25,11 @@ repository (this is done so you can quickly check what this tool does, without s
 
 
 ### Top Level Opts:
-- `mode`: mode to create the client: `socket`, `http`. Default: `socket`
-- `interval`: seconds between each stat, in seconds. Minimum is 1 second. Default is `5`.
+- `mode`: mode to create the client: `socket`, `http`. Default `socket`
+- `interval`: seconds between each stat, in seconds. Minimum is 1 second. Default `5`.
+- `daemons`: Number of daemons to handle requests. Default `10`.
 - `repository`: which repository to use (they're listed in the Supported Repositories list, in special font)
-                each repository will bound different options. Default is `stdout`.
+                each repository will bound different options. Default `stdout`.
 
 
 ### Mode Options

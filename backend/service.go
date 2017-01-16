@@ -77,28 +77,3 @@ func (s *Service) Close() {
 
 	time.Sleep(time.Millisecond * 500)
 }
-
-/*
-func MyRoutine(v interface{}) error {
-	t, ok := v.(int)
-	if !ok {
-		return errors.New(fmt.Sprintf("Unexpected type %T", v))
-	}
-
-	if t%2 != 0 {
-		return errors.New("Number can't be odd!")
-	}
-
-	fmt.Printf("%d is ok for an even number!\n", t)
-
-	return nil
-}
-
-func errorNotifier(err error) {
-	fmt.Fprintln(os.Stderr, err)
-}
-*/
-
-func main() {
-
-}

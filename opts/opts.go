@@ -13,6 +13,7 @@ import (
 type options struct {
 	Interval   int    // Seconds between each stats query.
 	Repository string // Which repository to use.
+	Daemons    int    // Number of daemons to handle requests.
 
 	Mode struct {
 		Name string // Client mode name
@@ -47,6 +48,11 @@ func GetOpts() *options {
 		"interval",
 		5,
 		"Interval between each stats query.")
+
+	flag.IntVar(&i.Daemons,
+		"daemons",
+		10,
+		"Number of daemons to handle requests.")
 
 	flag.StringVar(&i.Repository,
 		"repository",
@@ -90,9 +96,9 @@ func CreateRepositoryFromFlags(cfg *Config) (repo.Interface, error) {
 func CreateClientFromFlags(repo repo.Interface) (*backend.Client, error) {
 	switch GetOpts().Mode.Name {
 	case "socket":
-		return backend.New(repo, false, GetOpts().Mode.Socket.Path)
+		return backend.New(repo, false, GetOpts().Mode.Socket.Path, GetOpts().Daemons)
 	case "http":
-		return backend.New(repo, true, GetOpts().Mode.HTTP.Address)
+		return backend.New(repo, true, GetOpts().Mode.HTTP.Address, GetOpts().Daemons)
 	}
 
 	return nil, errors.New("Unknown mode: " + GetOpts().Mode.Name)

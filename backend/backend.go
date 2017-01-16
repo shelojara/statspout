@@ -20,6 +20,7 @@ const (
 	STATS_QUERY = "/containers/%s/stats?stream=0"
 )
 
+// Client holding data for the Backend.
 type Client struct {
 	service *Service       // the service to handle multiple daemons as a pipeline.
 	daemons int            // the number of daemons.
@@ -173,36 +174,41 @@ func (cli *Client) process(v interface{}) error {
 		return nil
 	}
 
+	// assert the type of the workload.
 	wl, ok := v.(Workload)
 	if !ok {
 		return errors.New(fmt.Sprintf("This is not a workload %T", v))
 	}
 
+	// create the request for stats.
 	req, err := http.NewRequest("GET", fmt.Sprintf(STATS_QUERY, wl.name), nil)
 	if err != nil {
 		return err
 	}
 
+	// request using the client.
 	res, err := wl.connection.Do(req)
 	if err != nil {
 		return err
 	}
 	defer res.Body.Close()
 
+	// here, since the stats API is a stream, we have to read until the delimiter, and then break with EOF.
 	reader := bufio.NewReader(res.Body)
 	for {
 		line, err := reader.ReadBytes('\n')
 		if err != nil {
-			break
+			break // EOF is an error.
 		}
 
 		container := &ContainerStats{}
-		json.Unmarshal(line, container)
-
-		if container.Read == (time.Time{}) {
-			return errors.New("Not a valid container: " + wl.name)
+		err = json.Unmarshal(line, container)
+		if err != nil {
+			// this error could mean that the container does not exists.
+			return err
 		}
 
+		// push the stats to the repository, calculating relevant data.
 		cli.repo.Push(&stats.Stats{
 			MemoryPercent: calcMemoryPercent(container),
 			CpuPercent:    calcCpuPercent(container),
@@ -217,7 +223,7 @@ func (cli *Client) process(v interface{}) error {
 
 // Reports errors to STDERR.
 func (cli *Client) onError(err error) {
-	fmt.Fprintln(os.Stderr, err)
+	fmt.Fprintln(os.Stderr, "Error: "+err.Error())
 }
 
 // Creates a client for TCP (http) or Unix with the given address.

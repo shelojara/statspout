@@ -17,15 +17,17 @@ import (
 )
 
 const (
-	DAEMONS     = 10
 	STATS_QUERY = "/containers/%s/stats?stream=0"
 )
 
-type Backend struct {
-	service *Service
-	clients chan *httputil.ClientConn
-	repo    repo.Interface
-	exit    bool
+type Client struct {
+	service *Service       // the service to handle multiple daemons as a pipeline.
+	daemons int            // the number of daemons.
+	repo    repo.Interface // the repository to push stats.
+	exit    bool           // did this client exited.
+
+	clients   chan *httputil.ClientConn // queue of clients for daemons.
+	dedicated *httputil.ClientConn      // dedicated client for side requests.
 }
 
 // Work to process by daemons.
@@ -34,21 +36,25 @@ type Workload struct {
 	name       string               // name of the docker container to request.
 }
 
+// Cpu Usage reported by the Docker Stats API.
 type CpuUsage struct {
 	Total  uint64   `json:"total_usage"`
 	PerCpu []uint64 `json:"percpu_usage"`
 }
 
+// Cpu Stats reported by the Docker Stats API.
 type CpuStats struct {
 	Usage          CpuUsage `json:"cpu_usage"`
 	SystemCpuUsage uint64   `json:"system_cpu_usage"`
 }
 
+// Memory Stats reported by the Docker Stats API.
 type MemoryStats struct {
 	Usage uint64 `json:"usage"`
 	Limit uint64 `json:"limit"`
 }
 
+// Container Stats reported by the Docker Stats API.
 type ContainerStats struct {
 	Cpu    CpuStats `json:"cpu_stats"`
 	PreCpu CpuStats `json:"precpu_stats"`
@@ -58,30 +64,30 @@ type ContainerStats struct {
 	Read time.Time `json:"read"`
 }
 
+// Container struct to unmarshal JSON response form Docker List Containers API.
 type Container struct {
 	Names []string `json:"Names"`
 }
 
-func New(repo repo.Interface, http bool, address string) (*Backend, error) {
-	cli := &Backend{
-		repo: repo,
+// Creates a new Backend Client, which uses the given repository, can be created as a HTTP or Socket
+// client, specified by the http parameter. The address parameter must point to the endpoint or socket path,
+// finally, n will be the number of daemons available to take requests.
+func New(repo repo.Interface, http bool, address string, n int) (*Client, error) {
+	// create a client with simple information.
+	cli := &Client{
+		repo:    repo,
+		daemons: n,
 	}
 
-	cli.service = NewService(DAEMONS, cli.process, cli.onError)
-	cli.clients = make(chan *httputil.ClientConn, DAEMONS)
+	// create the service to hold daemons.
+	cli.service = NewService(n, cli.process, cli.onError)
 
-	for i := 0; i < DAEMONS; i++ {
-		var (
-			conn net.Conn
-			err  error
-		)
+	// create the channel for client connections.
+	cli.clients = make(chan *httputil.ClientConn, n)
 
-		if http {
-			conn, err = net.Dial("tcp", address)
-		} else {
-			conn, err = net.Dial("unix", address)
-		}
-
+	// for each daemon, create one client connection for them to work with.
+	for i := 0; i < n; i++ {
+		conn, err := createClient(http, address)
 		if err != nil {
 			return nil, err
 		}
@@ -89,34 +95,39 @@ func New(repo repo.Interface, http bool, address string) (*Backend, error) {
 		cli.clients <- httputil.NewClientConn(conn, nil)
 	}
 
+	// create a dedicated client connection for side requests.
+	conn, err := createClient(http, address)
+	if err != nil {
+		return nil, err
+	}
+	cli.dedicated = httputil.NewClientConn(conn, nil)
+
 	return cli, nil
 }
 
-func (cli *Backend) Query(name string) {
+// Queries the Docker Stats API for a container given by the canonical name.
+func (cli *Client) Query(name string) {
+	// take one client connection, will block until there's one available.
 	conn := <-cli.clients
 
+	// send the workload to the service, which will then select one daemon for the task.
 	cli.service.Send(Workload{
 		connection: conn,
 		name:       name,
 	})
 
+	// send back the client connection (this will never block).
 	cli.clients <- conn
 }
 
-func (cli *Backend) GetContainers() ([]string, error) {
-	conn, err := net.Dial("unix", "/var/run/docker.sock")
-	if err != nil {
-		return nil, err
-	}
-
-	c := httputil.NewClientConn(conn, nil)
-
+// Get containers names currently available in the Docker instance (only the ones that are running).
+func (cli *Client) GetContainers() ([]string, error) {
 	req, err := http.NewRequest("GET", "/containers/json", nil)
 	if err != nil {
 		return nil, err
 	}
 
-	res, err := c.Do(req)
+	res, err := cli.dedicated.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -140,18 +151,23 @@ func (cli *Backend) GetContainers() ([]string, error) {
 	return names, nil
 }
 
-func (cli *Backend) Close() {
+// Closes all connections and Goroutines.
+func (cli *Client) Close() {
 	cli.exit = true
 
 	cli.service.Close()
 
-	for i := 0; i < DAEMONS; i++ {
+	for i := 0; i < cli.daemons; i++ {
 		conn := <-cli.clients
 		conn.Close()
 	}
+
+	cli.dedicated.Close()
 }
 
-func (cli *Backend) process(v interface{}) error {
+// Process a single requests, this will be spawned by the some daemon and it meant to be used
+// as a callback routine.
+func (cli *Client) process(v interface{}) error {
 	// client wants to exit, ignore workload.
 	if cli.exit {
 		return nil
@@ -199,6 +215,16 @@ func (cli *Backend) process(v interface{}) error {
 	return nil
 }
 
-func (cli *Backend) onError(err error) {
+// Reports errors to STDERR.
+func (cli *Client) onError(err error) {
 	fmt.Fprintln(os.Stderr, err)
+}
+
+// Creates a client for TCP (http) or Unix with the given address.
+func createClient(http bool, address string) (net.Conn, error) {
+	if http {
+		return net.Dial("tcp", address)
+	}
+
+	return net.Dial("unix", address)
 }

@@ -87,7 +87,7 @@ func CreateRepositoryFromFlags(cfg *Config) (repo.Interface, error) {
 }
 
 // Creates the client from the options given by the client.
-func CreateClientFromFlags(repo repo.Interface) (*backend.Backend, error) {
+func CreateClientFromFlags(repo repo.Interface) (*backend.Client, error) {
 	switch GetOpts().Mode.Name {
 	case "socket":
 		return backend.New(repo, false, GetOpts().Mode.Socket.Path)

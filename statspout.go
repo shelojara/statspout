@@ -11,7 +11,7 @@ import (
 	"fmt"
 )
 
-func loop(client *backend.Backend, containers []string) {
+func loop(client *backend.Client, containers []string) {
 	ticker := time.NewTicker(time.Duration(opts.GetOpts().Interval) * time.Second)
 
 	closeC := make(chan os.Signal, 1)

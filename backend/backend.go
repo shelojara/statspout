@@ -2,18 +2,18 @@ package backend
 
 import (
 	"net/http/httputil"
+	"encoding/json"
+	"io/ioutil"
+	"net/http"
 	"errors"
+	"bufio"
+	"time"
 	"fmt"
 	"net"
-	"net/http"
-	"bufio"
-	"encoding/json"
-	"os"
-	"time"
-	"io/ioutil"
 
 	"github.com/mijara/statspout/repo"
 	"github.com/mijara/statspout/stats"
+	"github.com/mijara/statspout/log"
 )
 
 const (
@@ -96,12 +96,16 @@ func New(repo repo.Interface, http bool, address string, n int) (*Client, error)
 		cli.clients <- httputil.NewClientConn(conn, nil)
 	}
 
+	log.Info.Printf("%d daemons clients created.", n)
+
 	// create a dedicated client connection for side requests.
 	conn, err := createClient(http, address)
 	if err != nil {
 		return nil, err
 	}
 	cli.dedicated = httputil.NewClientConn(conn, nil)
+
+	log.Info.Printf("Docker client created.")
 
 	return cli, nil
 }
@@ -223,7 +227,7 @@ func (cli *Client) process(v interface{}) error {
 
 // Reports errors to STDERR.
 func (cli *Client) onError(err error) {
-	fmt.Fprintln(os.Stderr, "Error: "+err.Error())
+	log.Error.Fatal(err.Error())
 }
 
 // Creates a client for TCP (http) or Unix with the given address.

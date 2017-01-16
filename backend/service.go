@@ -21,6 +21,8 @@ package backend
 
 import (
 	"time"
+
+	"github.com/mijara/statspout/log"
 )
 
 type Routine func(interface{}) error
@@ -55,6 +57,8 @@ func NewService(n int, r Routine, errNot ErrNotifier) *Service {
 	for i := 0; i < n; i++ {
 		go daemon(r, pipe, closeChan, errNot)
 	}
+
+	log.Info.Printf("%d daemons started.", n)
 
 	return &Service{
 		daemons:   n,

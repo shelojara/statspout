@@ -2,13 +2,13 @@ package statspout
 
 import (
 	"os"
-	"log"
 	"os/signal"
 
-	"github.com/mijara/statspout/opts"
 	"time"
+	"github.com/mijara/statspout/opts"
 	"github.com/mijara/statspout/backend"
-	"fmt"
+	"github.com/mijara/statspout/log"
+	"runtime"
 )
 
 func loop(client *backend.Client, containers []string) {
@@ -25,7 +25,8 @@ func loop(client *backend.Client, containers []string) {
 	for {
 		select {
 		case <-closeC:
-			fmt.Println(" * Stopping: closing Goroutines and Clients. Please wait...")
+			log.Info.Printf("Stopping: closing Goroutines and Clients. Please wait...")
+
 			ticker.Stop()
 			return
 		case <-ticker.C:
@@ -37,31 +38,49 @@ func loop(client *backend.Client, containers []string) {
 	}
 }
 
+func inspect() {
+	ticker := time.NewTicker(10 * time.Second)
+
+	for range ticker.C {
+		n := runtime.NumGoroutine()
+		log.Debug.Printf("Goroutines: %d", n)
+	}
+}
+
 func Start(cfg *opts.Config) {
 	opts.GetOpts().Parse()
 
 	if opts.GetOpts().Interval < 1 {
-		log.Fatal("Interval cannot be less than 1.")
+		log.Error.Fatal("Interval cannot be less than 1.")
 	}
 
 	// start the Repo.
 	repository, err := opts.CreateRepositoryFromFlags(cfg)
 	if err != nil {
-		log.Fatal(err)
+		log.Error.Fatal(err)
 	}
 	defer repository.Close()
 
 	// start the Docker Endpoint.
 	client, err := opts.CreateClientFromFlags(repository)
 	if err != nil {
-		log.Fatal(err)
+		log.Error.Fatal(err)
 	}
 
 	// get containers.
 	containers, err := client.GetContainers()
 	if err != nil {
-		log.Fatal(err)
+		log.Error.Fatal(err)
 	}
+
+	// small goroutine inspector.
+	go inspect()
+
+	log.Info.Printf("Statspout started: %d daemons, %d interval, %s mode, %s repo",
+		opts.GetOpts().Daemons,
+		opts.GetOpts().Interval,
+		opts.GetOpts().Mode.Name,
+		opts.GetOpts().Repository)
 
 	// loop indefinitely until interrupt is received.
 	loop(client, containers)

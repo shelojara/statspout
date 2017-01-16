@@ -18,7 +18,6 @@ type Stats struct {
 	Timestamp time.Time    `json:"@timestamp"`
 
 	// associated container of this stats.
-	ID   string `json:"id"`
 	Name string `json:"name"`
 
 	// CPU usage percent.

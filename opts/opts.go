@@ -24,13 +24,6 @@ type options struct {
 		HTTP struct {
 			Address string // Docker API address
 		}
-
-		TLS struct {
-			Address string // Docker API address
-			Cert    string // TLS certificate
-			Key     string // TLS key
-			CA      string // TLS CA
-		}
 	}
 
 	Influx     common.InfluxOpts     // Influx specific options
@@ -75,35 +68,6 @@ func GetOpts() *options {
 		"localhost:4243",
 		"Docker API Address.")
 
-	flag.StringVar(&i.Mode.TLS.Address,
-		"tls.address",
-		"localhost:4243",
-		"Docker API Address.")
-
-	flag.StringVar(&i.Mode.TLS.Cert,
-		"tls.cert",
-		"",
-		"TLS Certificate.")
-
-	flag.StringVar(&i.Mode.TLS.Key,
-		"tls.key",
-		"",
-		"TLS Key.")
-
-	flag.StringVar(&i.Mode.TLS.CA,
-		"tls.ca",
-		"",
-		"TLS CA.")
-
-	/*
-	common.CreateInfluxDBOpts(&i.Influx)
-	common.CreateMongoOpts(&i.Mongo)
-	common.CreatePrometheusOpts(&i.Prometheus)
-	common.CreateRestOpts(&i.Rest)
-	*/
-
-	// flag.Parse()
-
 	return i
 }
 
@@ -123,14 +87,12 @@ func CreateRepositoryFromFlags(cfg *Config) (repo.Interface, error) {
 }
 
 // Creates the client from the options given by the client.
-func CreateClientFromFlags() (*backend.Endpoint, error) {
+func CreateClientFromFlags(repo repo.Interface) (*backend.Backend, error) {
 	switch GetOpts().Mode.Name {
 	case "socket":
-		return backend.NewUnixEndpoint(GetOpts().Mode.Socket.Path)
+		return backend.New(repo, false, GetOpts().Mode.Socket.Path)
 	case "http":
-		return backend.NewHTTPEndpoint(GetOpts().Mode.HTTP.Address)
-	case "tls":
-		return backend.NewTLSEndpoint(GetOpts().Mode.TLS.Address, GetOpts().Mode.TLS.Cert, GetOpts().Mode.TLS.Key, GetOpts().Mode.TLS.CA)
+		return backend.New(repo, true, GetOpts().Mode.HTTP.Address)
 	}
 
 	return nil, errors.New("Unknown mode: " + GetOpts().Mode.Name)

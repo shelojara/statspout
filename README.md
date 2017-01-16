@@ -25,7 +25,7 @@ repository (this is done so you can quickly check what this tool does, without s
 
 
 ### Top Level Opts:
-- `mode`: mode to create the client: `socket`, `http`, `tls`. Default: `socket`
+- `mode`: mode to create the client: `socket`, `http`. Default: `socket`
 - `interval`: seconds between each stat, in seconds. Minimum is 1 second. Default is `5`.
 - `repository`: which repository to use (they're listed in the Supported Repositories list, in special font)
                 each repository will bound different options. Default is `stdout`.
@@ -40,13 +40,6 @@ repository (this is done so you can quickly check what this tool does, without s
 #### HTTP
 
 - `http.address`: Docker API address. Default: `localhost:4243`
-
-#### TLS
-
-- `tls.address`: Docker API address. Default: `localhost:4243`
-- `tls.cert`: TLS certificate.
-- `tls.key`: TLS key.
-- `tls.ca`: TLS CA.
 
 
 ### Specific Repository Options

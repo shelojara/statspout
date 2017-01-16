@@ -1,7 +1,7 @@
 Statspout
 =========
 
-Docker Container stats routing that works with several repositories. 
+Docker Container stats routing. 
 
 Supported Repositories:
 

@@ -1,8 +1,9 @@
 package opts
 
 import (
-	"flag"
+	"strings"
 	"errors"
+	"flag"
 
 	"github.com/mijara/statspout/repo"
 	"github.com/mijara/statspout/backend"
@@ -11,9 +12,12 @@ import (
 
 // Structure to hold different options given by the client.
 type options struct {
-	Interval   int    // Seconds between each stats query.
-	Repository string // Which repository to use.
-	Daemons    int    // Number of daemons to handle requests.
+	Interval   int      // Seconds between each stats query.
+	Repository string   // Which repository to use.
+	Daemons    int      // Number of daemons to handle requests.
+	Ignore     []string // Container names to ignore, as an array.
+
+	ignoreBuff string // Container names to ignore, separated by comma.
 
 	Mode struct {
 		Name string // Client mode name
@@ -59,6 +63,11 @@ func GetOpts() *options {
 		"stdout",
 		"One of: stdout, mongodb, prometheus, influxdb, rest.")
 
+	flag.StringVar(&i.ignoreBuff,
+		"ignore",
+		"",
+		"Repository names to ignore, separated by comma.")
+
 	flag.StringVar(&i.Mode.Name,
 		"mode",
 		"socket",
@@ -79,6 +88,15 @@ func GetOpts() *options {
 
 func (*options) Parse() {
 	flag.Parse()
+
+	names := strings.Split(i.ignoreBuff, ",")
+	i.Ignore = make([]string, 0)
+
+	for _, name := range names {
+		if name != "" {
+			i.Ignore = append(i.Ignore, name)
+		}
+	}
 }
 
 // Creates the repository from the options given by the client.

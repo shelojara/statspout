@@ -30,7 +30,7 @@ repository (this is done so you can quickly check what this tool does, without s
 - `daemons`: Number of daemons to handle requests. Default `10`.
 - `repository`: which repository to use (they're listed in the Supported Repositories list, in special font)
                 each repository will bound different options. Default `stdout`.
-
+- `ignore`: Repository names to ignore, separated by comma. By default ignores nothing. Example: `--ignore=nginx,kibana`
 
 ### Mode Options
 

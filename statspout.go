@@ -9,6 +9,7 @@ import (
 	"github.com/mijara/statspout/opts"
 	"github.com/mijara/statspout/backend"
 	"github.com/mijara/statspout/log"
+	"github.com/influxdata/influxdb/pkg/slices"
 )
 
 func loop(client *backend.Client, containers map[string]bool) {
@@ -19,7 +20,9 @@ func loop(client *backend.Client, containers map[string]bool) {
 
 	// initial loop.
 	for name, _ := range containers {
-		client.Query(name)
+		if !slices.Exists(opts.GetOpts().Ignore, name) {
+			client.Query(name)
+		}
 	}
 
 	for {
@@ -32,7 +35,9 @@ func loop(client *backend.Client, containers map[string]bool) {
 		case <-ticker.C:
 			// query containers.
 			for name, _ := range containers {
-				client.Query(name)
+				if !slices.Exists(opts.GetOpts().Ignore, name) {
+					client.Query(name)
+				}
 			}
 		}
 	}

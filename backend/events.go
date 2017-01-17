@@ -15,6 +15,7 @@ type Event struct {
 	Actor struct {
 		Attributes struct {
 			Name string `json:"name"`
+			OldName string `json:"oldName,omitempty"`
 		} `json:"Attributes"`
 	} `json:"Actor"`
 }
@@ -83,6 +84,12 @@ func (em *EventsMonitor) loop(containers map[string]bool) {
 				case "start":
 					log.Info.Printf("Container %s started.", event.Actor.Attributes.Name)
 
+					containers[event.Actor.Attributes.Name] = true
+				case "rename":
+					oldName := event.Actor.Attributes.OldName[1:]
+					log.Info.Printf("Container %s renamed to %s.", oldName, event.Actor.Attributes.Name)
+
+					delete(containers, oldName)
 					containers[event.Actor.Attributes.Name] = true
 				}
 			}

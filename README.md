@@ -27,10 +27,10 @@ repository (this is done so you can quickly check what this tool does, without s
 ### Top Level Opts:
 - `mode`: mode to create the client: `socket`, `http`. Default `socket`
 - `interval`: seconds between each stat, in seconds. Minimum is 1 second. Default `5`.
-- `daemons`: Number of daemons to handle requests. Default `10`.
+- `daemons`: number of daemons to handle requests. Default `10`.
 - `repository`: which repository to use (they're listed in the Supported Repositories list, in special font)
                 each repository will bound different options. Default `stdout`.
-- `ignore`: Repository names to ignore, separated by comma. By default ignores nothing. Example: `--ignore=nginx,kibana`
+- `ignore`: repository names to ignore, separated by comma. By default ignores nothing. Example: `--ignore=nginx,kibana`
 
 ### Mode Options
 
@@ -215,4 +215,4 @@ nobody will panic over this).
 Finally, whenever your repository is needed, we will call the `Create()` method, in there you'll have to provide us
 with an instance of your repository, and that's it!
 
-Take notice that your repository **has to be safe to be used concurrently**.
+Notice that your repository **has to be safe to be used concurrently**.

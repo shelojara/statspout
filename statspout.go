@@ -9,7 +9,6 @@ import (
 	"github.com/mijara/statspout/opts"
 	"github.com/mijara/statspout/backend"
 	"github.com/mijara/statspout/log"
-	"github.com/influxdata/influxdb/pkg/slices"
 )
 
 func loop(client *backend.Client, containers map[string]bool) {
@@ -19,8 +18,8 @@ func loop(client *backend.Client, containers map[string]bool) {
 	signal.Notify(closeC, os.Interrupt, os.Kill)
 
 	// initial loop.
-	for name, _ := range containers {
-		if !slices.Exists(opts.GetOpts().Ignore, name) {
+	for name := range containers {
+		if !contains(opts.GetOpts().Ignore, name) {
 			client.Query(name)
 		}
 	}
@@ -29,13 +28,12 @@ func loop(client *backend.Client, containers map[string]bool) {
 		select {
 		case <-closeC:
 			log.Info.Printf("Stopping: closing Goroutines and Clients. Please wait...")
-
 			ticker.Stop()
 			return
 		case <-ticker.C:
 			// query containers.
-			for name, _ := range containers {
-				if !slices.Exists(opts.GetOpts().Ignore, name) {
+			for name := range containers {
+				if !contains(opts.GetOpts().Ignore, name) {
 					client.Query(name)
 				}
 			}

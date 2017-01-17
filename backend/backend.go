@@ -9,7 +9,6 @@ import (
 	"bufio"
 	"time"
 	"fmt"
-	"net"
 
 	"github.com/mijara/statspout/repo"
 	"github.com/mijara/statspout/stats"
@@ -29,6 +28,8 @@ type Client struct {
 
 	clients   chan *httputil.ClientConn // queue of clients for daemons.
 	dedicated *httputil.ClientConn      // dedicated client for side requests.
+
+	events *EventsMonitor // monitor attached to the events API.
 }
 
 // Work to process by daemons.
@@ -88,7 +89,7 @@ func New(repo repo.Interface, http bool, address string, n int) (*Client, error)
 
 	// for each daemon, create one client connection for them to work with.
 	for i := 0; i < n; i++ {
-		conn, err := createClient(http, address)
+		conn, err := createConn(http, address)
 		if err != nil {
 			return nil, err
 		}
@@ -99,11 +100,16 @@ func New(repo repo.Interface, http bool, address string, n int) (*Client, error)
 	log.Info.Printf("%d daemons clients created.", n)
 
 	// create a dedicated client connection for side requests.
-	conn, err := createClient(http, address)
+	conn, err := createConn(http, address)
 	if err != nil {
 		return nil, err
 	}
 	cli.dedicated = httputil.NewClientConn(conn, nil)
+
+	cli.events, err = NewEventsMonitor(http, address)
+	if err != nil {
+		return nil, err
+	}
 
 	log.Info.Printf("Docker client created.")
 
@@ -126,7 +132,7 @@ func (cli *Client) Query(name string) {
 }
 
 // Get containers names currently available in the Docker instance (only the ones that are running).
-func (cli *Client) GetContainers() ([]string, error) {
+func (cli *Client) GetContainers() (map[string]bool, error) {
 	req, err := http.NewRequest("GET", "/containers/json", nil)
 	if err != nil {
 		return nil, err
@@ -146,20 +152,25 @@ func (cli *Client) GetContainers() ([]string, error) {
 	var containers []Container
 	json.Unmarshal(body, &containers)
 
-	names := make([]string, len(containers))
+	names := make(map[string]bool)
 
-	for i, container := range containers {
+	for _, container := range containers {
 		name := container.Names[0]
-		names[i] = name[1:]
+		names[name[1:]] = true
 	}
 
 	return names, nil
+}
+
+func (cli *Client) StartMonitor(containers map[string]bool) {
+	cli.events.monitor(containers)
 }
 
 // Closes all connections and Goroutines.
 func (cli *Client) Close() {
 	cli.exit = true
 
+	cli.events.Close()
 	cli.service.Close()
 
 	for i := 0; i < cli.daemons; i++ {
@@ -228,13 +239,4 @@ func (cli *Client) process(v interface{}) error {
 // Reports errors to STDERR.
 func (cli *Client) onError(err error) {
 	log.Error.Fatal(err.Error())
-}
-
-// Creates a client for TCP (http) or Unix with the given address.
-func createClient(http bool, address string) (net.Conn, error) {
-	if http {
-		return net.Dial("tcp", address)
-	}
-
-	return net.Dial("unix", address)
 }

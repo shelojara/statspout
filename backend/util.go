@@ -1,5 +1,16 @@
 package backend
 
+import "net"
+
+// Creates a client for TCP (http) or Unix with the given address.
+func createConn(http bool, address string) (net.Conn, error) {
+	if http {
+		return net.Dial("tcp", address)
+	}
+
+	return net.Dial("unix", address)
+}
+
 // taken from: https://github.com/portainer/portainer/blob/develop/app/components/stats/statsController.js#L177-L193
 func calcCpuPercent(stats *ContainerStats) float64 {
 	cpuPercent := 0.0

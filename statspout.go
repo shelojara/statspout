@@ -2,24 +2,24 @@ package statspout
 
 import (
 	"os"
+	"time"
+	"runtime"
 	"os/signal"
 
-	"time"
 	"github.com/mijara/statspout/opts"
 	"github.com/mijara/statspout/backend"
 	"github.com/mijara/statspout/log"
-	"runtime"
 )
 
-func loop(client *backend.Client, containers []string) {
+func loop(client *backend.Client, containers map[string]bool) {
 	ticker := time.NewTicker(time.Duration(opts.GetOpts().Interval) * time.Second)
 
 	closeC := make(chan os.Signal, 1)
 	signal.Notify(closeC, os.Interrupt, os.Kill)
 
 	// initial loop.
-	for i := 0; i < len(containers); i++ {
-		client.Query(containers[i])
+	for name, _ := range containers {
+		client.Query(name)
 	}
 
 	for {
@@ -31,8 +31,8 @@ func loop(client *backend.Client, containers []string) {
 			return
 		case <-ticker.C:
 			// query containers.
-			for i := 0; i < len(containers); i++ {
-				client.Query(containers[i])
+			for name, _ := range containers {
+				client.Query(name)
 			}
 		}
 	}
@@ -82,9 +82,16 @@ func Start(cfg *opts.Config) {
 		opts.GetOpts().Mode.Name,
 		opts.GetOpts().Repository)
 
+	client.StartMonitor(containers)
+
 	// loop indefinitely until interrupt is received.
 	loop(client, containers)
 
 	// close all connections and goroutines.
 	client.Close()
+
+	// force exit
+	// TODO: this is needed because EventsMonitor is not able to exit gracefully when reading the HTTP
+	// TODO: stream Docker API, I don't know how to fix it at this time.
+	os.Exit(0)
 }

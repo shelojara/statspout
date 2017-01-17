@@ -29,8 +29,9 @@ func (*Prometheus) Create(v interface{}) (repo.Interface, error) {
 	return NewPrometheus(v.(*PrometheusOpts))
 }
 
-func (*Prometheus) Clear(name string) {
-	// not used.
+func (prom *Prometheus) Clear(name string) {
+	prom.cpuUsagePercent.DeleteLabelValues(name)
+	prom.memoryUsagePercent.DeleteLabelValues(name)
 }
 
 func NewPrometheus(opts *PrometheusOpts) (*Prometheus, error) {

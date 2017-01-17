@@ -12,7 +12,7 @@ var (
 )
 
 func init() {
-	Info = log.New(os.Stdout, "INFO: ", log.LstdFlags|log.Lmicroseconds|log.Lshortfile)
-	Error = log.New(os.Stderr, "ERROR: ", log.LstdFlags|log.Lmicroseconds|log.Lshortfile)
-	Debug = log.New(os.Stdout, "DEBUG: ", log.LstdFlags|log.Lmicroseconds|log.Lshortfile)
+	Info = log.New(os.Stdout, "INFO: ", log.LstdFlags|log.Lmicroseconds)
+	Error = log.New(os.Stderr, "ERROR: ", log.LstdFlags|log.Lmicroseconds)
+	Debug = log.New(os.Stdout, "DEBUG: ", log.LstdFlags|log.Lmicroseconds)
 }

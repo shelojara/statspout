@@ -19,6 +19,9 @@ type Interface interface {
 	// Close the service.
 	Close()
 
+	// Clears data of the named container from this repository (useful for repositories that store container data).
+	Clear(name string)
+
 	// Canonical name of this repository, used to identify it in the command line flags.
 	Name() string
 }

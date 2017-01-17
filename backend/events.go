@@ -14,7 +14,7 @@ type Event struct {
 	Action string `json:"Action"`
 	Actor struct {
 		Attributes struct {
-			Name string `json:"name"`
+			Name    string `json:"name"`
 			OldName string `json:"oldName,omitempty"`
 		} `json:"Attributes"`
 	} `json:"Actor"`
@@ -36,16 +36,16 @@ func NewEventsMonitor(http bool, address string) (*EventsMonitor, error) {
 	}, nil
 }
 
-func (em *EventsMonitor) monitor(containers map[string]bool) {
+func (em *EventsMonitor) monitor(cli *Client, containers map[string]bool) {
 	em.quit = make(chan bool, 1)
-	go em.loop(containers)
+	go em.loop(cli, containers)
 }
 
 func (em *EventsMonitor) Close() {
 	em.quit <- true
 }
 
-func (em *EventsMonitor) loop(containers map[string]bool) {
+func (em *EventsMonitor) loop(cli *Client, containers map[string]bool) {
 	req, err := http.NewRequest("GET", "/events", nil)
 	if err != nil {
 		log.Error.Printf("Could not monitor events: %s", err.Error())
@@ -79,18 +79,20 @@ func (em *EventsMonitor) loop(containers map[string]bool) {
 				switch event.Action {
 				case "stop":
 					log.Info.Printf("Container %s stopped.", event.Actor.Attributes.Name)
-
 					delete(containers, event.Actor.Attributes.Name)
+					cli.repo.Clear(event.Actor.Attributes.Name)
+
 				case "start":
 					log.Info.Printf("Container %s started.", event.Actor.Attributes.Name)
-
 					containers[event.Actor.Attributes.Name] = true
+
 				case "rename":
 					oldName := event.Actor.Attributes.OldName[1:]
 					log.Info.Printf("Container %s renamed to %s.", oldName, event.Actor.Attributes.Name)
 
 					delete(containers, oldName)
 					containers[event.Actor.Attributes.Name] = true
+					cli.repo.Clear(oldName)
 				}
 			}
 		}

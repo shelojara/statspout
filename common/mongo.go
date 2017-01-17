@@ -57,6 +57,10 @@ func (mongo *Mongo) Close() {
 	mongo.session.Close()
 }
 
+func (mongo *Mongo) Clear(name string) {
+	// not used.
+}
+
 func CreateMongoOpts() *MongoOpts {
 	o := &MongoOpts{}
 

@@ -65,6 +65,10 @@ func (influx *InfluxDB) Close() {
 	influx.client.Close()
 }
 
+func (influx *InfluxDB) Clear(name string) {
+	// not used.
+}
+
 // Pushes certain a single value to the database, using the resource as the name and
 // the name of the container as a tag.
 func (influx *InfluxDB) pushResource(s *stats.Stats, resource string, value float64) error {

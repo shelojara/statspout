@@ -29,6 +29,10 @@ func (*Prometheus) Create(v interface{}) (repo.Interface, error) {
 	return NewPrometheus(v.(*PrometheusOpts))
 }
 
+func (*Prometheus) Clear(name string) {
+	// not used.
+}
+
 func NewPrometheus(opts *PrometheusOpts) (*Prometheus, error) {
 	// hacky way of removing the default Go Collector.
 	prometheus.Unregister(prometheus.NewGoCollector())

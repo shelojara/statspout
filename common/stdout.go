@@ -18,6 +18,9 @@ func (*Stdout) Create(v interface{}) (repo.Interface, error) {
 	return NewStdout(), nil
 }
 
+func (*Stdout) Clear(name string) {
+}
+
 func NewStdout() *Stdout {
 	return &Stdout{}
 }

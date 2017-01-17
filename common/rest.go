@@ -65,6 +65,10 @@ func (rest *Rest) Push(s *stats.Stats) error {
 func (rest *Rest) Close() {
 }
 
+func (rest *Rest) Clear(name string) {
+	delete(rest.registry, name)
+}
+
 func CreateRestOpts() *RestOpts {
 	o := &RestOpts{}
 

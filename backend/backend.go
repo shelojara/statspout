@@ -163,7 +163,7 @@ func (cli *Client) GetContainers() (map[string]bool, error) {
 }
 
 func (cli *Client) StartMonitor(containers map[string]bool) {
-	cli.events.monitor(containers)
+	cli.events.monitor(cli, containers)
 }
 
 // Closes all connections and Goroutines.

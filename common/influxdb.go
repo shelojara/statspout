@@ -36,8 +36,14 @@ func (*InfluxDB) Create(v interface{}) (repo.Interface, error) {
 }
 
 func (influx *InfluxDB) Push(s *stats.Stats) error {
-	influx.pushResource(s, "cpu_usage", s.CpuPercent)
-	influx.pushResource(s, "mem_usage", s.MemoryPercent)
+	if err := influx.pushResource(s, "cpu_usage", s.CpuPercent); err != nil {
+		return err
+	}
+
+	if err := influx.pushResource(s, "mem_usage", s.MemoryPercent); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -84,6 +90,10 @@ func (influx *InfluxDB) pushResource(s *stats.Stats, resource string, value floa
 	fields := map[string]interface{}{"value": value}
 
 	pt, err := client.NewPoint(resource, tags, fields, s.Timestamp)
+	if err != nil {
+		return err
+	}
+
 	bp.AddPoint(pt)
 
 	err = influx.client.Write(bp)

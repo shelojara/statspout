@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/mijara/statspout/log"
+	"errors"
 )
 
 type Routine func(interface{}) error
@@ -37,13 +38,29 @@ type Service struct {
 	pipe      chan interface{}
 }
 
-func daemon(r Routine, pipe chan interface{}, close chan bool, errNotifier ErrNotifier) {
+func daemon(routine Routine, pipe chan interface{}, close chan bool, errNotifier ErrNotifier) {
+	defer func() {
+		if r := recover(); r != nil {
+			switch t := r.(type) {
+			case error:
+				errNotifier(t)
+			case string:
+				errNotifier(errors.New(t))
+			}
+
+			// replace the dead daemon with a new one.
+			go daemon(routine, pipe, close, errNotifier)
+
+			log.Info.Printf("Daemon died, spawned another one in place.")
+		}
+	}()
+
 	for {
 		select {
 		case <-close:
 			return
 		case req := <-pipe:
-			if err := r(req); err != nil {
+			if err := routine(req); err != nil {
 				errNotifier(err)
 			}
 		}

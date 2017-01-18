@@ -13,6 +13,7 @@ import (
 	"github.com/mijara/statspout/repo"
 	"github.com/mijara/statspout/stats"
 	"github.com/mijara/statspout/log"
+	"math/rand"
 )
 
 const (
@@ -238,5 +239,5 @@ func (cli *Client) process(v interface{}) error {
 
 // Reports errors to STDERR.
 func (cli *Client) onError(err error) {
-	log.Error.Fatal(err.Error())
+	log.Error.Printf(err.Error())
 }

@@ -36,7 +36,7 @@ type Stats struct {
 
 // Prints stats in a nice format.
 func (stats *Stats) String() string {
-	return fmt.Sprintf("[%s] {%s} CPU: %f%%, MEM: %f%% [%d Bytes] Tx/Rx: %d/%d",
+	return fmt.Sprintf("[%s] {%s} CPU: %f%%, MEM: %f%% [%d B] Tx/Rx: %d/%d",
 		stats.Name, stats.Timestamp.Format("02 Jan 06 15:04:05 MST"),
 		stats.CpuPercent, stats.MemoryPercent, stats.MemoryUsage,
 		stats.TxBytesTotal, stats.RxBytesTotal)

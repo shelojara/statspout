@@ -44,6 +44,14 @@ func (influx *InfluxDB) Push(s *stats.Stats) error {
 		return err
 	}
 
+	if err := influx.pushResource(s, "tx_bytes", s.TxBytesTotal); err != nil {
+		return err
+	}
+
+	if err := influx.pushResource(s, "rx_bytes", s.RxBytesTotal); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -77,7 +85,7 @@ func (influx *InfluxDB) Clear(name string) {
 
 // Pushes certain a single value to the database, using the resource as the name and
 // the name of the container as a tag.
-func (influx *InfluxDB) pushResource(s *stats.Stats, resource string, value float64) error {
+func (influx *InfluxDB) pushResource(s *stats.Stats, resource string, value interface{}) error {
 	bp, err := client.NewBatchPoints(client.BatchPointsConfig{
 		Database:  influx.database,
 		Precision: "s",

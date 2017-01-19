@@ -13,7 +13,6 @@ import (
 	"github.com/mijara/statspout/repo"
 	"github.com/mijara/statspout/stats"
 	"github.com/mijara/statspout/log"
-	"math/rand"
 )
 
 const (
@@ -57,12 +56,27 @@ type MemoryStats struct {
 	Limit uint64 `json:"limit"`
 }
 
+// Network Interface stats.
+type InterfaceStats struct {
+	RxBytes   uint32 `json:"rx_bytes"`
+	RxDropped uint32 `json:"rx_dropped"`
+	RxErrors  uint32 `json:"rx_errors"`
+	RxPackets uint32 `json:"rx_packets"`
+
+	TxBytes   uint32 `json:"tx_bytes"`
+	TxDropped uint32 `json:"tx_dropped"`
+	TxErrors  uint32 `json:"tx_errors"`
+	TxPackets uint32 `json:"tx_packets"`
+}
+
 // Container Stats reported by the Docker Stats API.
 type ContainerStats struct {
 	Cpu    CpuStats `json:"cpu_stats"`
 	PreCpu CpuStats `json:"precpu_stats"`
 
 	Memory MemoryStats `json:"memory_stats"`
+
+	Networks map[string]InterfaceStats `json:"networks"`
 
 	Read time.Time `json:"read"`
 }
@@ -229,6 +243,8 @@ func (cli *Client) process(v interface{}) error {
 			MemoryPercent: calcMemoryPercent(container),
 			CpuPercent:    calcCpuPercent(container),
 			MemoryUsage:   container.Memory.Usage,
+			TxBytesTotal:  sumTxBytesTotal(container.Networks),
+			RxBytesTotal:  sumRxBytesTotal(container.Networks),
 			Timestamp:     container.Read,
 			Name:          wl.name,
 		})

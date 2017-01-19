@@ -28,3 +28,17 @@ func calcCpuPercent(stats *ContainerStats) float64 {
 func calcMemoryPercent(stats *ContainerStats) float64 {
 	return float64(stats.Memory.Usage) * 100.0 / float64(stats.Memory.Limit)
 }
+
+func sumTxBytesTotal(interfaces map[string]InterfaceStats) (sum uint32) {
+	for _, i := range interfaces {
+		sum += i.TxBytes
+	}
+	return
+}
+
+func sumRxBytesTotal(interfaces map[string]InterfaceStats) (sum uint32) {
+	for _, i := range interfaces {
+		sum += i.RxBytes
+	}
+	return
+}

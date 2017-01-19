@@ -17,6 +17,8 @@ type Prometheus struct {
 	memoryUsagePercent *prometheus.GaugeVec
 	txBytesTotal       *prometheus.GaugeVec
 	rxBytesTotal       *prometheus.GaugeVec
+	blockIORead        *prometheus.GaugeVec
+	blockIOWrite       *prometheus.GaugeVec
 }
 
 type PrometheusOpts struct {
@@ -36,6 +38,8 @@ func (prom *Prometheus) Clear(name string) {
 	prom.memoryUsagePercent.DeleteLabelValues(name)
 	prom.txBytesTotal.DeleteLabelValues(name)
 	prom.rxBytesTotal.DeleteLabelValues(name)
+	prom.blockIOWrite.DeleteLabelValues(name)
+	prom.blockIORead.DeleteLabelValues(name)
 }
 
 func NewPrometheus(opts *PrometheusOpts) (*Prometheus, error) {
@@ -74,10 +78,28 @@ func NewPrometheus(opts *PrometheusOpts) (*Prometheus, error) {
 		[]string{"container"},
 	)
 
+	blockIORead := prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "blkio_read",
+			Help: "Block IO Read Bytes.",
+		},
+		[]string{"container"},
+	)
+
+	blockIOWrite := prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "blkio_write",
+			Help: "Block IO Write Bytes.",
+		},
+		[]string{"container"},
+	)
+
 	prometheus.MustRegister(cpuUsagePercent)
 	prometheus.MustRegister(memoryUsagePercent)
 	prometheus.MustRegister(txBytesTotal)
 	prometheus.MustRegister(rxBytesTotal)
+	prometheus.MustRegister(blockIORead)
+	prometheus.MustRegister(blockIOWrite)
 
 	// set handler for default Prometheus collection path.
 	http.Handle("/metrics", promhttp.Handler())
@@ -90,6 +112,8 @@ func NewPrometheus(opts *PrometheusOpts) (*Prometheus, error) {
 		memoryUsagePercent: memoryUsagePercent,
 		txBytesTotal:       txBytesTotal,
 		rxBytesTotal:       rxBytesTotal,
+		blockIORead:        blockIORead,
+		blockIOWrite:       blockIOWrite,
 	}, nil
 }
 
@@ -98,6 +122,8 @@ func (prom *Prometheus) Push(s *stats.Stats) error {
 	prom.memoryUsagePercent.WithLabelValues(s.Name).Set(s.MemoryPercent)
 	prom.txBytesTotal.WithLabelValues(s.Name).Set(s.MemoryPercent)
 	prom.rxBytesTotal.WithLabelValues(s.Name).Set(s.MemoryPercent)
+	prom.blockIORead.WithLabelValues(s.Name).Set(float64(s.BlockIOBytesRead))
+	prom.blockIOWrite.WithLabelValues(s.Name).Set(float64(s.BlockIOBytesWrite))
 
 	return nil
 }

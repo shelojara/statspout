@@ -15,6 +15,8 @@ import (
 type Prometheus struct {
 	cpuUsagePercent    *prometheus.GaugeVec
 	memoryUsagePercent *prometheus.GaugeVec
+	txBytesTotal       *prometheus.GaugeVec
+	rxBytesTotal       *prometheus.GaugeVec
 }
 
 type PrometheusOpts struct {
@@ -32,6 +34,8 @@ func (*Prometheus) Create(v interface{}) (repo.Interface, error) {
 func (prom *Prometheus) Clear(name string) {
 	prom.cpuUsagePercent.DeleteLabelValues(name)
 	prom.memoryUsagePercent.DeleteLabelValues(name)
+	prom.txBytesTotal.DeleteLabelValues(name)
+	prom.rxBytesTotal.DeleteLabelValues(name)
 }
 
 func NewPrometheus(opts *PrometheusOpts) (*Prometheus, error) {
@@ -54,8 +58,26 @@ func NewPrometheus(opts *PrometheusOpts) (*Prometheus, error) {
 		[]string{"container"},
 	)
 
+	txBytesTotal := prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "tx_bytes",
+			Help: "TX Bytes Total.",
+		},
+		[]string{"container"},
+	)
+
+	rxBytesTotal := prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "rx_bytes",
+			Help: "RX Bytes Total.",
+		},
+		[]string{"container"},
+	)
+
 	prometheus.MustRegister(cpuUsagePercent)
 	prometheus.MustRegister(memoryUsagePercent)
+	prometheus.MustRegister(txBytesTotal)
+	prometheus.MustRegister(rxBytesTotal)
 
 	// set handler for default Prometheus collection path.
 	http.Handle("/metrics", promhttp.Handler())
@@ -66,12 +88,16 @@ func NewPrometheus(opts *PrometheusOpts) (*Prometheus, error) {
 	return &Prometheus{
 		cpuUsagePercent:    cpuUsagePercent,
 		memoryUsagePercent: memoryUsagePercent,
+		txBytesTotal:       txBytesTotal,
+		rxBytesTotal:       rxBytesTotal,
 	}, nil
 }
 
 func (prom *Prometheus) Push(s *stats.Stats) error {
 	prom.cpuUsagePercent.WithLabelValues(s.Name).Set(s.CpuPercent)
 	prom.memoryUsagePercent.WithLabelValues(s.Name).Set(s.MemoryPercent)
+	prom.txBytesTotal.WithLabelValues(s.Name).Set(s.MemoryPercent)
+	prom.rxBytesTotal.WithLabelValues(s.Name).Set(s.MemoryPercent)
 
 	return nil
 }

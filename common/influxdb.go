@@ -52,6 +52,14 @@ func (influx *InfluxDB) Push(s *stats.Stats) error {
 		return err
 	}
 
+	if err := influx.pushResource(s, "blkio_read", s.BlockIOBytesRead); err != nil {
+		return err
+	}
+
+	if err := influx.pushResource(s, "blkio_write", s.BlockIOBytesWrite); err != nil {
+		return err
+	}
+
 	return nil
 }
 

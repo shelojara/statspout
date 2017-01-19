@@ -32,12 +32,16 @@ type Stats struct {
 	// Transmit and Receive network stats, in bytes.
 	TxBytesTotal uint32 `json:"tx_bytes"`
 	RxBytesTotal uint32 `json:"rx_bytes"`
+
+	BlockIOBytesRead  int `json:"blkio_read"`
+	BlockIOBytesWrite int `json:"blkio_write"`
 }
 
 // Prints stats in a nice format.
 func (stats *Stats) String() string {
-	return fmt.Sprintf("[%s] {%s} CPU: %f%%, MEM: %f%% [%d B] Tx/Rx: %d/%d",
+	return fmt.Sprintf("[%s] {%s} CPU: %f%%, MEM: %f%% [%d B] Tx/Rx: %d/%d, IO R/W: %d/%d",
 		stats.Name, stats.Timestamp.Format("02 Jan 06 15:04:05 MST"),
 		stats.CpuPercent, stats.MemoryPercent, stats.MemoryUsage,
-		stats.TxBytesTotal, stats.RxBytesTotal)
+		stats.TxBytesTotal, stats.RxBytesTotal,
+		stats.BlockIOBytesRead, stats.BlockIOBytesWrite)
 }

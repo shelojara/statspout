@@ -42,3 +42,13 @@ func sumRxBytesTotal(interfaces map[string]InterfaceStats) (sum uint32) {
 	}
 	return
 }
+
+func getOpValue(container *ContainerStats, name string) int {
+	for _, op := range container.BlockIO.ServiceBytesRecursive {
+		if op.Op == name {
+			return op.Value
+		}
+	}
+
+	return 0
+}

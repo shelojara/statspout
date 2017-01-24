@@ -69,13 +69,6 @@ type InterfaceStats struct {
 	TxPackets uint32 `json:"tx_packets"`
 }
 
-type BlockOp struct {
-	Major int `json:"major"`
-	Minor int `json:"minor"`
-	Op    string `json:"op"`
-	Value int `json:"value"`
-}
-
 // Container Stats reported by the Docker Stats API.
 type ContainerStats struct {
 	Cpu    CpuStats `json:"cpu_stats"`
@@ -84,10 +77,6 @@ type ContainerStats struct {
 	Memory MemoryStats `json:"memory_stats"`
 
 	Networks map[string]InterfaceStats `json:"networks"`
-
-	BlockIO struct {
-		ServiceBytesRecursive []BlockOp `json:"io_service_bytes_recursive"`
-	} `json:"blkio_stats"`
 
 	Read time.Time `json:"read"`
 }
@@ -256,8 +245,6 @@ func (cli *Client) process(v interface{}) error {
 			MemoryUsage:       container.Memory.Usage,
 			TxBytesTotal:      sumTxBytesTotal(container.Networks),
 			RxBytesTotal:      sumRxBytesTotal(container.Networks),
-			BlockIOBytesRead:  getOpValue(container, "Read"),
-			BlockIOBytesWrite: getOpValue(container, "Write"),
 			Timestamp:         container.Read,
 			Name:              wl.name,
 		})

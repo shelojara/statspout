@@ -5,13 +5,6 @@ import (
 	"time"
 )
 
-// Standard project container to not relay on a specific docker client implementation.
-type Container struct {
-	ID    string
-	Names []string
-	Image string
-}
-
 // Standard project stats to not relay on a specific docker client implementation.
 type Stats struct {
 	// Timestamp of this stats.
@@ -32,6 +25,8 @@ type Stats struct {
 	// Transmit and Receive network stats, in bytes.
 	TxBytesTotal uint32 `json:"tx_bytes"`
 	RxBytesTotal uint32 `json:"rx_bytes"`
+
+	Labels map[string]string
 }
 
 // Prints stats in a nice format.

@@ -35,7 +35,7 @@ type Client struct {
 // Work to process by daemons.
 type Workload struct {
 	connection *httputil.ClientConn // connection on which the request is going to be made.
-	name       string               // name of the docker container to request.
+	container  *Container           // container object to request.
 }
 
 // Cpu Usage reported by the Docker Stats API.
@@ -84,6 +84,17 @@ type ContainerStats struct {
 // Container struct to unmarshal JSON response form Docker List Containers API.
 type Container struct {
 	Names []string `json:"Names"`
+	Labels map[string]string `json:"Labels"`
+
+	CanonicalName string
+}
+
+type ContainerInspect struct {
+	Name string `json:"Name"`
+
+	Config struct {
+		Labels map[string]string `json:"Labels"`
+	} `json:"Config"`
 }
 
 // Creates a new Backend Client, which uses the given repository, can be created as a HTTP or Socket
@@ -132,14 +143,14 @@ func New(repo repo.Interface, http bool, address string, n int) (*Client, error)
 }
 
 // Queries the Docker Stats API for a container given by the canonical name.
-func (cli *Client) Query(name string) {
+func (cli *Client) Query(container *Container) {
 	// take one client connection, will block until there's one available.
 	conn := <-cli.clients
 
 	// send the workload to the service, which will then select one daemon for the task.
 	cli.service.Send(Workload{
 		connection: conn,
-		name:       name,
+		container:  container,
 	})
 
 	// send back the client connection (this will never block).
@@ -147,7 +158,7 @@ func (cli *Client) Query(name string) {
 }
 
 // Get containers names currently available in the Docker instance (only the ones that are running).
-func (cli *Client) GetContainers() (map[string]bool, error) {
+func (cli *Client) GetContainers() (map[string]*Container, error) {
 	req, err := http.NewRequest("GET", "/containers/json", nil)
 	if err != nil {
 		return nil, err
@@ -167,17 +178,17 @@ func (cli *Client) GetContainers() (map[string]bool, error) {
 	var containers []Container
 	json.Unmarshal(body, &containers)
 
-	names := make(map[string]bool)
+	result := make(map[string]*Container)
 
 	for _, container := range containers {
-		name := container.Names[0]
-		names[name[1:]] = true
+		container.CanonicalName = container.Names[0][1:]
+		result[container.CanonicalName] = &container
 	}
 
-	return names, nil
+	return result, nil
 }
 
-func (cli *Client) StartMonitor(containers map[string]bool) {
+func (cli *Client) StartMonitor(containers map[string]*Container) {
 	cli.events.monitor(cli, containers)
 }
 
@@ -211,7 +222,7 @@ func (cli *Client) process(v interface{}) error {
 	}
 
 	// create the request for stats.
-	req, err := http.NewRequest("GET", fmt.Sprintf(STATS_QUERY, wl.name), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf(STATS_QUERY, wl.container.CanonicalName), nil)
 	if err != nil {
 		return err
 	}
@@ -240,13 +251,14 @@ func (cli *Client) process(v interface{}) error {
 
 		// push the stats to the repository, calculating relevant data.
 		cli.repo.Push(&stats.Stats{
-			MemoryPercent:     calcMemoryPercent(container),
-			CpuPercent:        calcCpuPercent(container),
-			MemoryUsage:       container.Memory.Usage,
-			TxBytesTotal:      sumTxBytesTotal(container.Networks),
-			RxBytesTotal:      sumRxBytesTotal(container.Networks),
-			Timestamp:         container.Read,
-			Name:              wl.name,
+			MemoryPercent: calcMemoryPercent(container),
+			CpuPercent:    calcCpuPercent(container),
+			MemoryUsage:   container.Memory.Usage,
+			TxBytesTotal:  sumTxBytesTotal(container.Networks),
+			RxBytesTotal:  sumRxBytesTotal(container.Networks),
+			Timestamp:     container.Read,
+			Name:          wl.container.CanonicalName,
+			Labels:        wl.container.Labels,
 		})
 	}
 
@@ -256,4 +268,27 @@ func (cli *Client) process(v interface{}) error {
 // Reports errors to STDERR.
 func (cli *Client) onError(err error) {
 	log.Error.Printf(err.Error())
+}
+
+// RequestContainer ask the docker API for a single container data.
+func (cli *Client) RequestContainer(name string) (*Container, error) {
+	req, err := http.NewRequest("GET", "/containers/" + name + "/json", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := cli.dedicated.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	container := &ContainerInspect{}
+	json.NewDecoder(res.Body).Decode(container)
+
+	return &Container{
+		Names: []string{container.Name},
+		CanonicalName: name,
+		Labels: container.Config.Labels,
+	}, nil
 }

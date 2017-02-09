@@ -7,6 +7,7 @@ import (
 	"bufio"
 
 	"github.com/mijara/statspout/log"
+	"fmt"
 )
 
 type Event struct {
@@ -36,7 +37,7 @@ func NewEventsMonitor(http bool, address string) (*EventsMonitor, error) {
 	}, nil
 }
 
-func (em *EventsMonitor) monitor(cli *Client, containers map[string]bool) {
+func (em *EventsMonitor) monitor(cli *Client, containers map[string]*Container) {
 	em.quit = make(chan bool, 1)
 	go em.loop(cli, containers)
 }
@@ -45,7 +46,7 @@ func (em *EventsMonitor) Close() {
 	em.quit <- true
 }
 
-func (em *EventsMonitor) loop(cli *Client, containers map[string]bool) {
+func (em *EventsMonitor) loop(cli *Client, containers map[string]*Container) {
 	req, err := http.NewRequest("GET", "/events", nil)
 	if err != nil {
 		log.Error.Printf("Could not monitor events: %s", err.Error())
@@ -84,15 +85,31 @@ func (em *EventsMonitor) loop(cli *Client, containers map[string]bool) {
 
 				case "start":
 					log.Info.Printf("Container %s started.", event.Actor.Attributes.Name)
-					containers[event.Actor.Attributes.Name] = true
+
+					// retrieve and store new container data.
+					container, err := cli.RequestContainer(event.Actor.Attributes.Name)
+					if err != nil {
+						log.Error.Printf("Cannot retrieve container data for %s. Error: %s",
+							event.Actor.Attributes.Name, err.Error())
+					}
+					containers[container.CanonicalName] = container
 
 				case "rename":
 					oldName := event.Actor.Attributes.OldName[1:]
 					log.Info.Printf("Container %s renamed to %s.", oldName, event.Actor.Attributes.Name)
 
+					// delete registered container from map.
 					delete(containers, oldName)
-					containers[event.Actor.Attributes.Name] = true
 					cli.repo.Clear(oldName)
+
+					// retrieve and store new container data.
+					container, err := cli.RequestContainer(event.Actor.Attributes.Name)
+					if err != nil {
+						log.Error.Printf("Cannot retrieve container data for %s. Error: %s",
+							event.Actor.Attributes.Name, err.Error())
+					}
+					fmt.Println(container)
+					containers[container.CanonicalName] = container
 				}
 			}
 		}

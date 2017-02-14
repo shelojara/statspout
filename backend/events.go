@@ -1,19 +1,19 @@
 package backend
 
 import (
-	"net/http/httputil"
-	"net/http"
-	"encoding/json"
 	"bufio"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/http/httputil"
 
 	"github.com/mijara/statspout/log"
-	"fmt"
 )
 
 type Event struct {
 	Type   string `json:"Type"`
 	Action string `json:"Action"`
-	Actor struct {
+	Actor  struct {
 		Attributes struct {
 			Name    string `json:"name"`
 			OldName string `json:"oldName,omitempty"`

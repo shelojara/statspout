@@ -2,13 +2,13 @@ package statspout
 
 import (
 	"os"
-	"time"
-	"runtime"
 	"os/signal"
+	"runtime"
+	"time"
 
-	"github.com/mijara/statspout/opts"
 	"github.com/mijara/statspout/backend"
 	"github.com/mijara/statspout/log"
+	"github.com/mijara/statspout/opts"
 )
 
 func loop(client *backend.Client, containers map[string]*backend.Container) {

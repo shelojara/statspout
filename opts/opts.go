@@ -1,13 +1,13 @@
 package opts
 
 import (
-	"strings"
 	"errors"
 	"flag"
+	"strings"
 
-	"github.com/mijara/statspout/repo"
 	"github.com/mijara/statspout/backend"
 	"github.com/mijara/statspout/common"
+	"github.com/mijara/statspout/repo"
 )
 
 // Structure to hold different options given by the client.

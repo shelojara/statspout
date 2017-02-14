@@ -3,8 +3,8 @@ package common
 import (
 	"flag"
 
-	"github.com/mijara/statspout/repo"
 	"github.com/influxdata/influxdb/client/v2"
+	"github.com/mijara/statspout/repo"
 	"github.com/mijara/statspout/stats"
 )
 

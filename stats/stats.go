@@ -8,7 +8,7 @@ import (
 // Standard project stats to not relay on a specific docker client implementation.
 type Stats struct {
 	// Timestamp of this stats.
-	Timestamp time.Time    `json:"@timestamp"`
+	Timestamp time.Time `json:"@timestamp"`
 
 	// associated container of this stats.
 	Name string `json:"name"`
@@ -31,7 +31,7 @@ type Stats struct {
 
 // Prints stats in a nice format.
 func (stats *Stats) String() string {
-	return fmt.Sprintf("[%s] {%s} CPU: %f%%, MEM: %f%% [%d B] Tx/Rx: %d/%d",
+	return fmt.Sprintf("[%s] {%s} CPU: %.2f%%, MEM: %.2f%% [%d B] Tx/Rx: %d/%d",
 		stats.Name, stats.Timestamp.Format("02 Jan 06 15:04:05 MST"),
 		stats.CpuPercent, stats.MemoryPercent, stats.MemoryUsage,
 		stats.TxBytesTotal, stats.RxBytesTotal)

@@ -1,18 +1,18 @@
 package backend
 
 import (
-	"net/http/httputil"
+	"bufio"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
-	"errors"
-	"bufio"
+	"net/http/httputil"
 	"time"
-	"fmt"
 
+	"github.com/mijara/statspout/log"
 	"github.com/mijara/statspout/repo"
 	"github.com/mijara/statspout/stats"
-	"github.com/mijara/statspout/log"
 )
 
 const (
@@ -83,7 +83,7 @@ type ContainerStats struct {
 
 // Container struct to unmarshal JSON response form Docker List Containers API.
 type Container struct {
-	Names []string `json:"Names"`
+	Names  []string          `json:"Names"`
 	Labels map[string]string `json:"Labels"`
 
 	CanonicalName string
@@ -272,7 +272,7 @@ func (cli *Client) onError(err error) {
 
 // RequestContainer ask the docker API for a single container data.
 func (cli *Client) RequestContainer(name string) (*Container, error) {
-	req, err := http.NewRequest("GET", "/containers/" + name + "/json", nil)
+	req, err := http.NewRequest("GET", "/containers/"+name+"/json", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -287,8 +287,8 @@ func (cli *Client) RequestContainer(name string) (*Container, error) {
 	json.NewDecoder(res.Body).Decode(container)
 
 	return &Container{
-		Names: []string{container.Name},
+		Names:         []string{container.Name},
 		CanonicalName: name,
-		Labels: container.Config.Labels,
+		Labels:        container.Config.Labels,
 	}, nil
 }

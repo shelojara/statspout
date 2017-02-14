@@ -11,16 +11,16 @@ import (
 	"github.com/mijara/statspout/opts"
 )
 
-func loop(client *backend.Client, containers map[string]*backend.Container) {
+func loop(client *backend.Client, containers map[string]backend.Container) {
 	ticker := time.NewTicker(time.Duration(opts.GetOpts().Interval) * time.Second)
 
 	closeC := make(chan os.Signal, 1)
 	signal.Notify(closeC, os.Interrupt, os.Kill)
 
 	// initial loop.
-	for name, container := range containers {
+	for name := range containers {
 		if !contains(opts.GetOpts().Ignore, name) {
-			client.Query(container)
+			client.Query(containers[name])
 		}
 	}
 
@@ -32,9 +32,9 @@ func loop(client *backend.Client, containers map[string]*backend.Container) {
 			return
 		case <-ticker.C:
 			// query containers.
-			for name, container := range containers {
+			for name := range containers {
 				if !contains(opts.GetOpts().Ignore, name) {
-					client.Query(container)
+					client.Query(containers[name])
 				}
 			}
 		}

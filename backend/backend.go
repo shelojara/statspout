@@ -35,7 +35,7 @@ type Client struct {
 // Work to process by daemons.
 type Workload struct {
 	connection *httputil.ClientConn // connection on which the request is going to be made.
-	container  *Container           // container object to request.
+	container  Container           // container object to request.
 }
 
 // Cpu Usage reported by the Docker Stats API.
@@ -143,7 +143,7 @@ func New(repo repo.Interface, http bool, address string, n int) (*Client, error)
 }
 
 // Queries the Docker Stats API for a container given by the canonical name.
-func (cli *Client) Query(container *Container) {
+func (cli *Client) Query(container Container) {
 	// take one client connection, will block until there's one available.
 	conn := <-cli.clients
 
@@ -158,7 +158,7 @@ func (cli *Client) Query(container *Container) {
 }
 
 // Get containers names currently available in the Docker instance (only the ones that are running).
-func (cli *Client) GetContainers() (map[string]*Container, error) {
+func (cli *Client) GetContainers() (map[string]Container, error) {
 	req, err := http.NewRequest("GET", "/containers/json", nil)
 	if err != nil {
 		return nil, err
@@ -178,17 +178,17 @@ func (cli *Client) GetContainers() (map[string]*Container, error) {
 	var containers []Container
 	json.Unmarshal(body, &containers)
 
-	result := make(map[string]*Container)
+	result := make(map[string]Container)
 
 	for _, container := range containers {
 		container.CanonicalName = container.Names[0][1:]
-		result[container.CanonicalName] = &container
+		result[container.CanonicalName] = container
 	}
 
 	return result, nil
 }
 
-func (cli *Client) StartMonitor(containers map[string]*Container) {
+func (cli *Client) StartMonitor(containers map[string]Container) {
 	cli.events.monitor(cli, containers)
 }
 

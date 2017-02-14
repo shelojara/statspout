@@ -37,7 +37,7 @@ func NewEventsMonitor(http bool, address string) (*EventsMonitor, error) {
 	}, nil
 }
 
-func (em *EventsMonitor) monitor(cli *Client, containers map[string]*Container) {
+func (em *EventsMonitor) monitor(cli *Client, containers map[string]Container) {
 	em.quit = make(chan bool, 1)
 	go em.loop(cli, containers)
 }
@@ -46,7 +46,7 @@ func (em *EventsMonitor) Close() {
 	em.quit <- true
 }
 
-func (em *EventsMonitor) loop(cli *Client, containers map[string]*Container) {
+func (em *EventsMonitor) loop(cli *Client, containers map[string]Container) {
 	req, err := http.NewRequest("GET", "/events", nil)
 	if err != nil {
 		log.Error.Printf("Could not monitor events: %s", err.Error())
@@ -92,7 +92,7 @@ func (em *EventsMonitor) loop(cli *Client, containers map[string]*Container) {
 						log.Error.Printf("Cannot retrieve container data for %s. Error: %s",
 							event.Actor.Attributes.Name, err.Error())
 					}
-					containers[container.CanonicalName] = container
+					containers[container.CanonicalName] = *container
 
 				case "rename":
 					oldName := event.Actor.Attributes.OldName[1:]
@@ -109,7 +109,7 @@ func (em *EventsMonitor) loop(cli *Client, containers map[string]*Container) {
 							event.Actor.Attributes.Name, err.Error())
 					}
 					fmt.Println(container)
-					containers[container.CanonicalName] = container
+					containers[container.CanonicalName] = *container
 				}
 			}
 		}
